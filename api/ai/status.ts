@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default function handler(_req: VercelRequest, res: VercelResponse) {
+  const memoryConfigured = Boolean(process.env.OMNIROUTE_MEMORY_URL);
+
   res.status(200).json({
     gateway: 'OmniRoute',
     status: 'awaiting-configuration',
@@ -8,10 +10,10 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     curriculum: 'NCDC competency-based',
     persistence: 'Supabase connected',
     memory: {
-      engine: 'Mount Masaba AI Memory Engine',
-      status: 'ready',
-      storage: process.env.MEMORY_STORAGE_PROVIDER ?? 'not-configured',
-      vectorSearch: process.env.MEMORY_VECTOR_PROVIDER ?? 'not-configured'
+      engine: 'OmniRoute native memory',
+      status: memoryConfigured ? 'configured' : 'not-configured',
+      storage: process.env.OMNIROUTE_MEMORY_STORAGE ?? 'OmniRoute-managed',
+      vectorSearch: process.env.OMNIROUTE_MEMORY_VECTOR ?? 'OmniRoute native vector/FTS fallback'
     }
   });
 }
