@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '@appdeploy/client';
 import { ArrowRight, BookOpen, CalendarDays, CheckCircle2, CircleDollarSign, GraduationCap, Library, MessageCircle, Monitor, Newspaper, Search, Sparkles, Trophy, Users } from 'lucide-react';
 
 const teachers = [
@@ -30,7 +29,7 @@ function App() { // Mount Masaba human school homepage
   const [site,setSite]=useState({gallery:[],news:[],events:[],info:[],contacts:[]});
   const [menuOpen,setMenuOpen]=useState(false);
   const fallbackSlides=[{title:'Welcome to Mount Masaba',accent:'High School',kicker:'WELCOME TO MOUNT MASABA',text:'Knowledge, discipline and excellence — growing learners for a better future.'},{title:'Learn. Grow.',accent:'Lead.',kicker:'OUR SCHOOL COMMUNITY',text:'A caring coeducational learning community in Mbale, at the base of Mt. Elgon.'},{title:'School Life',accent:'Beyond the Classroom',kicker:'INTER-CLASS SPORTS & ACTIVITIES',text:'Learning, friendship, leadership and healthy competition across classes.'}];
-  useEffect(()=>{api.get('/api/public-home').then(({data})=>{setSite(data);setDbStatus(data?.connected?'connected':'offline')}).catch(()=>setDbStatus('offline'))},[]);
+  useEffect(()=>{fetch('/api/public-home').then(r=>r.json()).then(data=>{setSite(data);setDbStatus(data?.connected?'connected':'offline')}).catch(()=>setDbStatus('offline'))},[]);
   const media=(path)=>{if(!path)return '';if(/^https?:\/\//i.test(path))return path;const p=path.replace(/^\/+/,'');if(p.startsWith('storage/v1/'))return 'https://bpxfyvxqciktrahaxkws.supabase.co/'+p;return 'https://bpxfyvxqciktrahaxkws.supabase.co/storage/v1/object/public/'+p};
   const gallery=site.gallery||[];
   const slides=[
@@ -47,7 +46,6 @@ function App() { // Mount Masaba human school homepage
   return <main className="shell">
 
     {mode==='home'?<>
-      <section className="refTop"><span>✉ info@mountmasabahigh.ac.ug</span><span>☎ +256 772 123 456</span><span>Mbale, Eastern Uganda • Mt. Elgon</span></section>
       <section className="refTop"><span>✉ info@mountmasabahigh.ac.ug</span><span>☎ +256 772 123 456</span><span>Mbale, Eastern Uganda • Mt. Elgon</span></section>
       <header className="refHeader"><div className="refBrand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba High School logo"/><div><b>Mount Masaba</b><strong>High School</strong></div></div><nav><button onClick={()=>go('about')}>About</button><button onClick={()=>go('academics')}>Academics</button><button onClick={()=>go('life')}>School Life</button><button onClick={()=>go('admissions')}>Admissions</button><button onClick={()=>go('contact')}>Contact</button></nav><button className="refMenu" aria-label="Open menu" onClick={()=>setMenuOpen(true)}>☰</button></header>
       {menuOpen&&<div className="mobileMenuOverlay" role="dialog" aria-label="School menu"><button className="mobileMenuBackdrop" aria-label="Close menu" onClick={()=>setMenuOpen(false)}></button><aside className="mobileMenuPanel"><div className="mobileMenuHead"><div className="refBrand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba High School logo"/><div><b>Mount Masaba</b><strong>High School</strong></div></div><button className="mobileMenuClose" onClick={()=>setMenuOpen(false)} aria-label="Close menu">×</button></div><div className="mobileMenuLinks"><button onClick={()=>{setMenuOpen(false);go('about')}}>About Us</button><button onClick={()=>{setMenuOpen(false);go('academics')}}>Academics</button><button onClick={()=>{setMenuOpen(false);go('admissions')}}>Admissions</button><button onClick={()=>{setMenuOpen(false);go('life')}}>School Life</button><button onClick={()=>{setMenuOpen(false);go('location')}}>Location</button><button onClick={()=>{setMenuOpen(false);go('contact')}}>Contact</button><button onClick={()=>{setMenuOpen(false);go('news')}}>News & Events</button><button onClick={()=>{setMenuOpen(false);go('gallery')}}>Gallery</button></div><div className="mobilePortalLinks"><button className="mobileStudentPortal" onClick={()=>{setMenuOpen(false);setPortalRole('student');setMode('portal')}}>Student Portal <ArrowRight size={15}/></button><button className="mobileParentPortal" onClick={()=>{setMenuOpen(false);setPortalRole('parent');setMode('portal')}}>Parent Portal <ArrowRight size={15}/></button></div></aside></div>}
