@@ -1,0 +1,99 @@
+[
+  {
+    "name": "Human school homepage on mobile",
+    "sanity": true,
+    "viewport": "mobile",
+    "covers": [
+      "hero",
+      "official school information",
+      "about",
+      "why choose",
+      "news",
+      "academics",
+      "school life",
+      "admissions",
+      "scholarships",
+      "location",
+      "gallery",
+      "official motto",
+      "contact"
+    ],
+    "description": "Checks the public homepage presents the full human school website structure on a mobile viewport.",
+    "steps": [
+      "Open the website",
+      "Scroll through the homepage",
+      "Open the mobile menu"
+    ],
+    "expected": "The homepage has the school header, hero, About, Why Choose, News & Events, Academics, School Life, Admissions, Gallery, Contact and footer sections."
+  },
+  {
+    "name": "Student portal behaves like a portal",
+    "viewport": "mobile",
+    "covers": [
+      "student portal",
+      "dashboard",
+      "results",
+      "attendance",
+      "AI teachers"
+    ],
+    "description": "Checks the student portal has a real dashboard structure and portal navigation.",
+    "steps": [
+      "Open Student Portal",
+      "View Dashboard",
+      "Open AI Teachers",
+      "Switch O-Level/A-Level"
+    ],
+    "expected": "The student portal shows dashboard cards, portal navigation, curriculum controls and the 18 AI teacher grid."
+  },
+  {
+    "name": "Parent portal behaves like a portal",
+    "viewport": "mobile",
+    "covers": [
+      "parent portal",
+      "children",
+      "fees",
+      "attendance",
+      "messages"
+    ],
+    "description": "Checks parents have a separate portal workspace.",
+    "steps": [
+      "Open Parent Portal",
+      "View Dashboard",
+      "Open My Children",
+      "Open Fees"
+    ],
+    "expected": "The parent portal shows family-oriented dashboard cards and navigation for children, results, attendance, fees, timetable and messages."
+  },
+  {
+    "name": "Inter-class sports only",
+    "viewport": "mobile",
+    "covers": [
+      "inter-class sports",
+      "no houses"
+    ],
+    "description": "Checks sports are described as class-based competition.",
+    "steps": [
+      "Open School Life",
+      "Read the sports card"
+    ],
+    "expected": "The website explicitly describes inter-class sports and does not introduce house competition."
+  },
+  {
+    "name": "Admin-managed images",
+    "viewport": "desktop",
+    "covers": [
+      "Supabase gallery",
+      "hero images",
+      "school campus photo",
+      "news images",
+      "gallery"
+    ],
+    "description": "Checks image slots use published Supabase media and do not introduce stock image URLs.",
+    "steps": [
+      "Open the homepage",
+      "Publish an image in the Supabase gallery",
+      "Refresh the homepage"
+    ],
+    "expected": "Published gallery media appears in the appropriate hero, school-life, school campus, news or gallery positions."
+  }
+]
