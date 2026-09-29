@@ -15,7 +15,9 @@ export default function VoiceTeacher({ teacher, level }: Props) {
   const transcribe=async(audioBase64:string,mimeType:string)=>{try{
     const tr=await fetch('/api/ai/voice/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audioBase64,mimeType})});const data=await tr.json();if(!tr.ok)throw new Error(data.error||'Transcription failed');
     const text=data.text||'';setTranscript(text);if(!text)throw new Error('No speech detected.');setStatus('Generating the teacher response…');
-    const answer='You are the '+teacher+' AI teacher for '+level+' at Mount Masaba High School. Answer the student clearly, at the selected level, and keep the explanation practical and concise. Student says: '+text;
+    const ar=await fetch('/api/ai/voice/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teacher,level,text})});
+    const answerData=await ar.json().catch(()=>({})); if(!ar.ok) throw new Error(answerData.error||'Teacher answer generation failed');
+    const answer=answerData.answer||''; if(!answer) throw new Error('No teacher answer returned.');
     const sr=await fetch('/api/ai/voice/speech',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({input:answer})});if(!sr.ok){const e=await sr.json().catch(()=>({}));throw new Error(e.error||'Speech generation failed')}
     const audio=await sr.blob();if(audioUrl.current)URL.revokeObjectURL(audioUrl.current);audioUrl.current=URL.createObjectURL(audio);const player=new Audio(audioUrl.current);await player.play();setStatus('Teacher response played.');
   }catch(e){setStatus(e instanceof Error?e.message:'Voice request failed.')}finally{setBusy(false)}};
