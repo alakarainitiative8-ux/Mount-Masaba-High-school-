@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, CalendarDays, CheckCircle2, CircleDollarSign, GraduationCap, Library, MessageCircle, Monitor, Newspaper, Search, Sparkles, Trophy, Users } from 'lucide-react';
 import VoiceTeacher from './components/VoiceTeacher';
 
@@ -26,7 +26,7 @@ const teachers = [
 const MockMedia = ({label, className=''}) => <div className={'mockPhoto '+className} role="img" aria-label={label}><span>{label}</span></div>;
 
 function SatelliteMap(){
-  const mapRef=useState(null)[0];
+  const mapRef=useRef(null);
   useEffect(()=>{
     let map;
     const load=()=>{
@@ -42,7 +42,7 @@ function SatelliteMap(){
     }
     return()=>{if(map)map.remove()};
   },[mapRef]);
-  return <div className="satelliteMap"><div ref={mapRef} className="satelliteMapCanvas"/><span className="satelliteBadge">SATELLITE</span></div>;
+  return <div className="satelliteMap"><div ref={mapRef} className="satelliteMapCanvas"/></div>;
 }
 
 
