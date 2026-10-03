@@ -961,3 +961,15 @@ footer {
 .satelliteMapCanvas{width:100%;height:100%}
 .satelliteMap .leaflet-control-attribution{font-size:8px}
 @media(max-width:760px){.satelliteMap{height:205px}}
+
+
+/* Location aerial photo map - stable mobile rendering */
+.refLocation{display:block}
+.refMapCard{width:100%;margin-top:10px}
+.satelliteMap{position:relative;width:100%;height:210px;margin-top:9px;border-radius:7px;overflow:hidden;background:#dce6ea}
+.satelliteMap>img{display:block;width:100%;height:100%;object-fit:cover}
+.schoolMapPin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);width:28px;height:28px;border-radius:50% 50% 50% 0;background:#d92d20;color:#fff;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);font-size:0;transform:translate(-50%,-90%) rotate(-45deg)}
+.schoolMapLabel{position:absolute;left:50%;top:50%;transform:translate(-50%,18px);background:rgba(5,35,58,.9);color:#fff;border-radius:5px;padding:5px 8px;font-size:8px;font-weight:900;white-space:nowrap;box-shadow:0 2px 7px rgba(0,0,0,.2)}
+.locationMapActions{display:flex;gap:8px;margin-top:10px}
+.locationMapActions .inlineBtn{flex:1;justify-content:center;margin-top:0}
+@media(max-width:760px){.satelliteMap{height:190px}.locationMapActions{gap:5px}.locationMapActions .inlineBtn{padding:10px 8px;font-size:9px}.refLocationImage{height:190px}}
