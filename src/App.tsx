@@ -26,26 +26,9 @@ const teachers = [
 const MockMedia = ({label, className=''}) => <div className={'mockPhoto '+className} role="img" aria-label={label}><span>{label}</span></div>;
 
 function SatelliteMap(){
-  const mapRef=useRef(null);
-  useEffect(()=>{
-    let map;
-    const load=()=>{
-      if(!window.L||!mapRef)return;
-      map=window.L.map(mapRef,{scrollWheelZoom:false,zoomControl:true}).setView([1.0771,34.18015],17);
-      window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map);
-      window.L.marker([1.0771,34.18015]).addTo(map).bindPopup('<b>Mount Masaba High School</b><br/>North Road Cell, Mbale').openPopup();
-      setTimeout(()=>map.invalidateSize(),100);
-    };
-    if(window.L) load(); else {
-      const link=document.createElement('link');link.rel='stylesheet';link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(link);
-      const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.onload=load;document.body.appendChild(script);
-    }
-    return()=>{if(map)map.remove()};
-  },[mapRef]);
-  return <div className="satelliteMap"><div ref={mapRef} className="satelliteMapCanvas"/></div>;
+  const src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=34.168%2C1.068%2C34.192%2C1.088&bboxSR=4326&size=1000%2C520&imageSR=4326&format=jpg&f=image';
+  return <div className="satelliteMap"><img src={src} alt="Aerial view around Mount Masaba High School, Mbale" loading="lazy"/><span className="schoolMapPin">●</span><div className="schoolMapLabel">Mount Masaba High School</div></div>;
 }
-
-
 
 function App() { // Mount Masaba human school homepage
   const [mode,setMode]=useState('home'),[portalRole,setPortalRole]=useState('student'),[level,setLevel]=useState('O-Level'),[selected,setSelected]=useState(0),[dbStatus,setDbStatus]=useState('checking'),[portalTab,setPortalTab]=useState('Dashboard'),[slide,setSlide]=useState(0);
