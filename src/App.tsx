@@ -25,6 +25,28 @@ const teachers = [
 
 const MockMedia = ({label, className=''}) => <div className={'mockPhoto '+className} role="img" aria-label={label}><span>{label}</span></div>;
 
+function SatelliteMap(){
+  const mapRef=useState(null)[0];
+  useEffect(()=>{
+    let map;
+    const load=()=>{
+      if(!window.L||!mapRef)return;
+      map=window.L.map(mapRef,{scrollWheelZoom:false,zoomControl:true}).setView([1.0771,34.18015],17);
+      window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map);
+      window.L.marker([1.0771,34.18015]).addTo(map).bindPopup('<b>Mount Masaba High School</b><br/>North Road Cell, Mbale').openPopup();
+      setTimeout(()=>map.invalidateSize(),100);
+    };
+    if(window.L) load(); else {
+      const link=document.createElement('link');link.rel='stylesheet';link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(link);
+      const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.onload=load;document.body.appendChild(script);
+    }
+    return()=>{if(map)map.remove()};
+  },[mapRef]);
+  return <div className="satelliteMap"><div ref={mapRef} className="satelliteMapCanvas"/><span className="satelliteBadge">SATELLITE</span></div>;
+}
+
+
+
 function App() { // Mount Masaba human school homepage
   const [mode,setMode]=useState('home'),[portalRole,setPortalRole]=useState('student'),[level,setLevel]=useState('O-Level'),[selected,setSelected]=useState(0),[dbStatus,setDbStatus]=useState('checking'),[portalTab,setPortalTab]=useState('Dashboard'),[slide,setSlide]=useState(0);
   const [site,setSite]=useState({gallery:[],news:[],events:[],info:[],contacts:[]});
@@ -81,7 +103,7 @@ function App() { // Mount Masaba human school homepage
 
       <section className="refSection refScholar"><div className="refSectionHead"><span className="refKicker">SCHOLARSHIPS & SUPPORT</span><h2>Every talented learner deserves a chance.</h2></div><div className="refScholarGrid"><div>{(()=>{const g=gallery.find(x=>x.image_path&&/scholar|support/i.test((x.album||'')+' '+(x.title||'')));return g?<img src={media(g.image_path)} alt="Scholarship support" loading="lazy"/>:<MockMedia label="Scholarship student photo"/>})()}</div><div><p>Mount Masaba has a history of community support and scholarships helping deserving learners access secondary education.</p><button className="refDarkBtn">Learn More <ArrowRight/></button></div></div></section>
 
-      <section id="location" className="refSection refLocation"><div className="refSectionHead"><span className="refKicker">OUR LOCATION</span><h2>At the base of Mt. Elgon.</h2></div><div className="refLocationImage">{(()=>{const g=gallery.find(x=>x.image_path&&/location|elgon|mbale/i.test((x.album||'')+' '+(x.title||'')));return g?<img src={media(g.image_path)} alt="Mbale and Mt. Elgon" loading="lazy"/>:<MockMedia label="Mt. Elgon and Mbale photo"/>})()}</div><div className="refMapCard"><p>📍 Mbale, Eastern Uganda</p><small>At the base of Mt. Elgon.</small><iframe title="Mount Masaba High School map" src="https://www.openstreetmap.org/export/embed.html?bbox=34.172%2C1.070%2C34.188%2C1.084&layer=mapnik&marker=1.0771%2C34.18015" loading="lazy"/></div><a className="refDarkBtn inlineBtn" href="https://www.google.com/maps/dir/?api=1&destination=1.0771,34.18015" target="_blank" rel="noreferrer">Get Directions <ArrowRight/></a></section>
+      <section id="location" className="refSection refLocation"><div className="refSectionHead"><span className="refKicker">OUR LOCATION</span><h2>At the base of Mt. Elgon.</h2></div><div className="refLocationImage">{(()=>{const g=gallery.find(x=>x.image_path&&/location|elgon|mbale/i.test((x.album||'')+' '+(x.title||'')));return g?<img src={media(g.image_path)} alt="Mbale and Mt. Elgon" loading="lazy"/>:<MockMedia label="Mt. Elgon and Mbale photo"/>})()}</div><div className="refMapCard"><p>📍 Mbale, Eastern Uganda</p><small>At the base of Mt. Elgon.</small><SatelliteMap/></div><a className="refDarkBtn inlineBtn" href="https://www.google.com/maps/dir/?api=1&destination=1.0771,34.18015" target="_blank" rel="noreferrer">Get Directions <ArrowRight/></a></section>
 
       <section className="refSection"><div className="refSectionHead"><span className="refKicker">GALLERY</span><h2>Moments from Mount Masaba.</h2></div><div className="refGallery">{gallery.filter(x=>x.image_path).slice(0,6).map(g=><img key={g.id} src={media(g.image_path)} alt={g.caption||'Mount Masaba High School'} loading="lazy"/>)}{!gallery.filter(x=>x.image_path).length&&[1,2,3,4,5,6].map(i=><MockMedia key={i} label="School photo placeholder"/>)}</div><button className="refDarkBtn">View More Photos <ArrowRight/></button></section>
 
