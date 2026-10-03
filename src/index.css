@@ -955,3 +955,10 @@ footer {
   .refBrand>div{min-width:0}
   .refBrand b,.refBrand strong{white-space:nowrap}
 }
+
+/* Planned satellite location map */
+.satelliteMap{position:relative;width:100%;height:220px;margin-top:8px;border-radius:7px;overflow:hidden;background:#dce6ea}
+.satelliteMapCanvas{width:100%;height:100%}
+.satelliteBadge{position:absolute;top:10px;left:10px;z-index:500;background:rgba(5,35,58,.88);color:#fff;border-radius:5px;padding:5px 8px;font-size:8px;font-weight:900;letter-spacing:.08em;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.satelliteMap .leaflet-control-attribution{font-size:8px}
+@media(max-width:760px){.satelliteMap{height:205px}}
