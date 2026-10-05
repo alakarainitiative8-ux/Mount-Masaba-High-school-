@@ -995,3 +995,56 @@ footer {
 @media(max-width:700px){.heroWatermark{width:220px;height:220px;right:-18px;top:58%;opacity:.07}.parentContent{padding:30px 14px 22px}.parentWelcome{align-items:flex-start;flex-direction:column}.parentWelcome h1{font-size:29px}.connectionChip{align-self:flex-start}.parentHeroCard{min-height:250px;padding:25px 22px}.pulseScore{display:none}.parentHeroCard h2{font-size:31px}.parentMetricGrid{gap:7px}.metricCard{padding:13px 10px;grid-template-columns:1fr;gap:5px}.metricIcon{width:31px;height:31px}.metricCard b{font-size:21px}.metricCard small{font-size:7px}.metricCard em{font-size:8px}.splitSection,.parentMiniGrid,.parentSubjectGrid{grid-template-columns:1fr}.parentAI{grid-template-columns:42px 1fr}.parentAI button{grid-column:1/-1;justify-content:center}.parentAI .aiOrb{width:42px;height:42px}.parentAI h2{font-size:15px}.parentHeader{padding:0 14px}.parentSection{margin:31px 0}.todayTimeline{padding:4px 13px}.timeItem{grid-template-columns:44px 8px 1fr auto;gap:8px}.sectionTitle h2{font-size:18px}.parentSubpage h1{font-size:30px}}
 
 .schoolLogo{width:38px;height:38px;object-fit:contain;border-radius:10px;background:#fff;display:block}.parentBrand{gap:11px}.parentBrand .schoolLogo{box-shadow:0 5px 14px rgba(22,139,208,.12)}
+
+/* Parent portal live-data surfaces */
+.parentAuth{min-height:100vh;background:#f6faff;display:flex;flex-direction:column}
+.parentAuthCard{width:min(520px,calc(100% - 32px));margin:7vh auto 120px;padding:32px;background:rgba(255,255,255,.92);border:1px solid #dbeaf3;border-radius:28px;box-shadow:0 20px 60px rgba(45,115,150,.12)}
+.authLogo{width:72px;height:72px;object-fit:contain;border-radius:20px;background:#fff;border:1px solid #e1edf4;margin-bottom:20px}
+.parentAuthCard h1{margin:8px 0;font-size:38px;letter-spacing:-1.5px;color:#142235}
+.parentAuthCard p{color:#718290;line-height:1.65}
+.parentAuthCard form{display:grid;gap:14px;margin-top:22px}
+.parentAuthCard label{font-size:12px;font-weight:800;letter-spacing:.08em;color:#718290}
+.parentAuthCard input,.messageForm input,.messageForm textarea{width:100%;margin-top:7px;padding:14px 15px;border:1px solid #d8e7ef;border-radius:14px;background:#fff;font:inherit;color:#172334;box-sizing:border-box;outline:none}
+.parentAuthCard input:focus,.messageForm input:focus,.messageForm textarea:focus{border-color:#43a8d8;box-shadow:0 0 0 3px rgba(67,168,216,.12)}
+.authSubmit{display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:14px 18px;background:#168ec7;color:#fff;font-weight:800;cursor:pointer}
+.authSubmit:disabled{opacity:.6;cursor:wait}
+.authHint{display:block;margin-top:18px;color:#8a9aa6;line-height:1.5}
+.parentError,.parentDataBanner{margin-top:12px;padding:11px 13px;border-radius:12px;background:#fff0f0;color:#a23c3c;font-size:13px}
+.parentDataBanner{margin:0 0 18px;background:#fff7e8;color:#856021;display:flex;align-items:center;justify-content:space-between}
+.parentDataBanner button,.iconButton{border:0;background:transparent;cursor:pointer}
+.parentLoading{align-items:center;justify-content:center;color:#4385a4}
+.spin{animation:parentSpin 1s linear infinite}@keyframes parentSpin{to{transform:rotate(360deg)}}
+.parentSubpage{padding-bottom:110px}
+.parentSubpage>h1{margin:4px 0 2px;font-size:38px;letter-spacing:-1.4px;color:#142235}
+.subcopy{color:#80909b;margin:0 0 24px}
+.liveGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.parentLivePanel{min-width:0}
+.resultSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.resultSummary>div{background:#fff;border:1px solid #dcebf3;border-radius:20px;padding:20px}
+.resultSummary span{display:block;font-size:10px;letter-spacing:.12em;font-weight:800;color:#8a9aa6}
+.resultSummary b{display:block;font-size:32px;margin:8px 0;color:#172334}
+.resultSummary small{color:#81909b}
+.liveRow{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 0;border-bottom:1px solid #edf3f6}
+.liveRow:last-child{border-bottom:0}
+.liveRow b,.messageItem b{display:block;color:#172334}
+.liveRow small,.messageItem small{display:block;color:#8a99a3;margin-top:4px}
+.liveRow>strong{font-size:12px;color:#3380a0;text-transform:capitalize}
+.messageItem{padding:15px 0;border-bottom:1px solid #edf3f6}
+.messageItem:last-child{border-bottom:0}
+.messageItem p{color:#667985;line-height:1.55;margin:7px 0 0}
+.messageForm{display:grid;gap:12px}
+.messageForm textarea{resize:vertical}
+.feeTotal{font-size:34px;font-weight:850;color:#172334;margin:5px 0 2px}
+.secondaryAction{display:inline-flex;align-items:center;gap:7px;border:1px solid #d8e7ef;background:#fff;border-radius:12px;padding:10px 13px;color:#337d9d;font-weight:750;cursor:pointer;margin-top:14px}
+.accountBox{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.accountBox img{width:56px;height:56px;object-fit:contain;border-radius:16px;background:#f7fbfd;border:1px solid #e1edf4}
+.accountBox b{font-size:18px;color:#172334}
+.accountBox small{color:#83919b}
+.emptyInline{padding:18px;border:1px dashed #d8e6ed;border-radius:14px;color:#85949d;background:#fbfdfe}
+@media(max-width:700px){
+  .parentAuthCard{padding:24px;margin-top:5vh}
+  .parentAuthCard h1,.parentSubpage>h1{font-size:32px}
+  .liveGrid,.resultSummary{grid-template-columns:1fr}
+  .resultSummary>div{padding:16px}
+  .parentSubpage{padding-bottom:100px}
+}
