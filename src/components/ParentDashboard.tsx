@@ -1,0 +1,135 @@
+import { useMemo, useState } from 'react';
+import { ArrowRight, Bell, BookOpen, CalendarDays, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, FileText, Heart, Home, MessageCircle, MoreHorizontal, Sparkles, TrendingUp, UserRound, WalletCards } from 'lucide-react';
+
+type ParentDashboardProps = { onBack?: () => void };
+
+const children = [
+  { id: 1, name: 'John Masaba', initials: 'JM', level: 'Senior 3', track: 'O-Level', attendance: 96, progress: 87, assignments: 8, totalAssignments: 10, average: 74, trend: '+8%', color: 'sunrise' },
+  { id: 2, name: 'Sarah Masaba', initials: 'SM', level: 'Senior 5', track: 'A-Level', attendance: 98, progress: 91, assignments: 6, totalAssignments: 6, average: 82, trend: '+5%', color: 'violet' }
+];
+
+const subjects = [
+  ['Mathematics', 78, '+12%', 'Strong'],
+  ['English Language', 84, '+6%', 'Strong'],
+  ['Biology', 71, '+4%', 'Growing'],
+  ['Chemistry', 67, '-2%', 'Focus'],
+  ['History', 82, '+9%', 'Strong'],
+  ['Kiswahili', 76, '+7%', 'Growing']
+];
+
+export default function ParentDashboard({ onBack }: ParentDashboardProps) {
+  const [childId, setChildId] = useState(1);
+  const [showChildren, setShowChildren] = useState(false);
+  const [active, setActive] = useState('Home');
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const child = useMemo(() => children.find(c => c.id === childId) || children[0], [childId]);
+
+  const nav = [
+    ['Home', Home],
+    ['Learning', BookOpen],
+    ['Results', TrendingUp],
+    ['Attendance', CheckCircle2],
+    ['Fees', WalletCards],
+    ['Messages', MessageCircle],
+  ] as const;
+
+  if (active !== 'Home') {
+    return <div className="parentApp">
+      <header className="parentHeader">
+        <button className="parentBrand" onClick={() => setActive('Home')}><span className="parentLogo">MM</span><span><b>Mount Masaba</b><small>Parent Portal</small></span></button>
+        <div className="parentHeaderActions"><button className="iconButton" onClick={() => setNoticeOpen(true)} aria-label="Notifications"><Bell size={19}/><i/></button><button className="parentAvatar">AM</button></div>
+      </header>
+      <main className="parentContent parentSubpage">
+        <button className="parentBack" onClick={() => setActive('Home')}>← Back to home</button>
+        <span className="eyebrow">PARENT PORTAL</span>
+        <h1>{active}</h1>
+        <p className="subcopy">Everything you need to support {child.name}'s school journey, in one calm place.</p>
+        <div className="parentFeaturePanel">
+          <Sparkles size={24}/><div><b>{active} is ready</b><p>Connect this section to live Supabase school records and it will show personalized information for {child.name}.</p></div>
+        </div>
+        {active === 'Learning' && <div className="parentMiniGrid">{['Assignments','Study materials','AI teacher activity','Upcoming assessments'].map(x=><div key={x} className="parentMiniCard"><BookOpen size={18}/><b>{x}</b><span>Personalized for {child.name}</span></div>)}</div>}
+        {active === 'Results' && <div className="parentSubjectGrid">{subjects.map(([s,v,t])=><div className="subjectCard" key={s}><span>{s}</span><b>{v}%</b><small>{t} this term</small><div className="meter"><i style={{width: v+'%'}}/></div></div>)}</div>}
+        {active === 'Attendance' && <div className="attendanceHero"><div className="attendanceRing"><strong>{child.attendance}%</strong><span>Attendance</span></div><div><b>Excellent consistency</b><p>Your child has maintained strong attendance. Keep encouraging a healthy school routine.</p></div></div>}
+        {active === 'Fees' && <div className="financePanel"><CircleDollarSign size={24}/><div><span>Current account</span><b>School fees statement</b><small>Payments, balances and receipts will appear here.</small></div><ArrowRight/></div>}
+        {active === 'Messages' && <div className="messagePanel"><MessageCircle size={24}/><div><b>Class Teacher</b><p>“John has shown encouraging improvement this month. Keep supporting his revision routine.”</p><small>Recent school communication</small></div></div>}
+      </main>
+      {noticeOpen && <div className="parentModal" onClick={() => setNoticeOpen(false)}><div className="noticeSheet" onClick={e=>e.stopPropagation()}><button onClick={()=>setNoticeOpen(false)}>×</button><span className="eyebrow">NOTIFICATIONS</span><h2>You're all caught up.</h2><p>No urgent alerts right now. We'll bring important school updates here.</p></div></div>}
+      <ParentNav active={active} setActive={setActive}/>
+    </div>;
+  }
+
+  return <div className="parentApp">
+    <header className="parentHeader">
+      <button className="parentBrand" onClick={onBack}><span className="parentLogo">MM</span><span><b>Mount Masaba</b><small>Parent Portal</small></span></button>
+      <div className="parentHeaderActions">
+        <button className="iconButton" onClick={() => setNoticeOpen(true)} aria-label="Notifications"><Bell size={19}/><i/></button>
+        <button className="parentAvatar" aria-label="Account">AM</button>
+      </div>
+    </header>
+
+    <main className="parentContent">
+      <section className="parentWelcome">
+        <div><span className="eyebrow">MONDAY • 5 OCTOBER</span><h1>Good evening, Parent <span>✦</span></h1><p>Here’s what matters most about your child's school day.</p></div>
+        <div className="connectionChip"><span/>Live school portal</div>
+      </section>
+
+      <section className="childSelectorWrap">
+        <button className="childSelector" onClick={()=>setShowChildren(v=>!v)}>
+          <span className={'childAvatar '+child.color}>{child.initials}</span><span className="childMeta"><b>{child.name}</b><small>{child.level} • {child.track}</small></span><ChevronDown size={17}/>
+        </button>
+        {showChildren && <div className="childMenu">{children.map(c=><button key={c.id} onClick={()=>{setChildId(c.id);setShowChildren(false)}}><span className={'childAvatar '+c.color}>{c.initials}</span><span><b>{c.name}</b><small>{c.level} • {c.track}</small></span>{c.id===child.id&&<CheckCircle2 size={17}/>}</button>)}</div>}
+      </section>
+
+      <section className="parentHeroCard">
+        <div className="heroGlow"/>
+        <div className="heroCopy"><span className="heroEyebrow">WEEKLY PULSE</span><h2>{child.name.split(' ')[0]} is having a <em>great week.</em></h2><p>Strong attendance, improving results and no urgent issues need your attention.</p><button onClick={()=>setActive('Results')}>See full progress <ArrowRight size={16}/></button></div>
+        <div className="pulseScore"><div className="pulseRing"><strong>{child.progress}</strong><span>/100</span></div><small>Progress</small></div>
+      </section>
+
+      <section className="parentMetricGrid">
+        <button className="metricCard" onClick={()=>setActive('Attendance')}><span className="metricIcon mint"><CheckCircle2 size={19}/></span><small>ATTENDANCE</small><b>{child.attendance}%</b><em>Excellent</em></button>
+        <button className="metricCard" onClick={()=>setActive('Results')}><span className="metricIcon blue"><TrendingUp size={19}/></span><small>ACADEMIC AVERAGE</small><b>{child.average}%</b><em className="positive">↑ {child.trend} this term</em></button>
+        <button className="metricCard" onClick={()=>setActive('Learning')}><span className="metricIcon amber"><FileText size={19}/></span><small>ASSIGNMENTS</small><b>{child.assignments}<span>/{child.totalAssignments}</span></b><em>Completed</em></button>
+      </section>
+
+      <section className="parentSection">
+        <div className="sectionTitle"><div><span className="eyebrow">TODAY</span><h2>What’s happening</h2></div><button onClick={()=>setActive('Learning')}>View schedule <ArrowRight size={15}/></button></div>
+        <div className="todayTimeline">
+          <div className="timeItem current"><span>08:00</span><i/><div><b>Mathematics</b><small>Algebra • Classroom 4</small></div><strong>Now</strong></div>
+          <div className="timeItem"><span>10:00</span><i/><div><b>English Language</b><small>Reading & communication</small></div><strong>Next</strong></div>
+          <div className="timeItem"><span>14:00</span><i/><div><b>Inter-Class Sports</b><small>School field • Activity</small></div><strong>Today</strong></div>
+        </div>
+      </section>
+
+      <section className="attentionCard">
+        <div className="attentionIcon">✦</div><div><span className="eyebrow">A LITTLE WIN</span><h3>Mathematics improved by 12%.</h3><p>{child.name.split(' ')[0]} is showing strong progress in Algebra. A little encouragement goes a long way.</p></div><button onClick={()=>setActive('Results')}><ArrowRight size={18}/></button>
+      </section>
+
+      <section className="parentSection">
+        <div className="sectionTitle"><div><span className="eyebrow">ACADEMIC PULSE</span><h2>How learning is going</h2></div><button onClick={()=>setActive('Results')}>All subjects <ArrowRight size={15}/></button></div>
+        <div className="subjectList">{subjects.slice(0,4).map(([name,value,trend,status])=><div className="subjectRow" key={name}><span className="subjectDot"/><div><b>{name}</b><small>{status}</small></div><strong>{value}%</strong><span className={'trend '+(String(trend).startsWith('-')?'down':'')}>{trend}</span><div className="meter"><i style={{width:value+'%'}}/></div></div>)}</div>
+      </section>
+
+      <section className="parentSection splitSection">
+        <div className="schoolCard"><div className="cardTop"><span className="eyebrow">SCHOOL</span><MoreHorizontal size={18}/></div><h3>Parent meeting</h3><p>Friday • 2:00 PM<br/>Main hall</p><button onClick={()=>setActive('Messages')}>View details <ArrowRight size={15}/></button></div>
+        <div className="schoolCard warm"><div className="cardTop"><span className="eyebrow">UP NEXT</span><CalendarDays size={18}/></div><h3>Mid-term assessment</h3><p>Starts in 9 days<br/>Revision materials are ready.</p><button onClick={()=>setActive('Learning')}>Prepare together <ArrowRight size={15}/></button></div>
+      </section>
+
+      <section className="parentAI">
+        <div className="aiOrb"><Sparkles size={22}/></div><div><span className="eyebrow">PARENT ASSISTANT</span><h2>Ask about {child.name.split(' ')[0]}'s progress.</h2><p>Get a simple explanation of results, attendance, assignments and what to focus on next.</p></div><button onClick={()=>setActive('Learning')}>Ask assistant <ArrowRight size={16}/></button>
+      </section>
+
+      <section className="parentSection reassurance">
+        <Heart size={18}/><div><b>You’re doing great as a parent.</b><p>The portal is here to make staying involved simple—not stressful.</p></div>
+      </section>
+    </main>
+
+    {noticeOpen && <div className="parentModal" onClick={() => setNoticeOpen(false)}><div className="noticeSheet" onClick={e=>e.stopPropagation()}><button onClick={()=>setNoticeOpen(false)}>×</button><span className="eyebrow">NOTIFICATIONS</span><h2>Nothing urgent.</h2><p>Your child is doing well. We'll bring important school updates here when they need your attention.</p><div className="noticeItem"><Bell size={16}/><span><b>Daily summary</b><small>You're all caught up.</small></span></div></div></div>}
+    <ParentNav active={active} setActive={setActive}/>
+  </div>;
+}
+
+function ParentNav({active,setActive}:{active:string,setActive:(s:string)=>void}) {
+  const nav=[['Home',Home],['Learning',BookOpen],['Results',TrendingUp],['Messages',MessageCircle],['More',MoreHorizontal]] as const;
+  return <nav className="parentBottomNav">{nav.map(([label,Icon])=><button key={label} className={active===label?'active':''} onClick={()=>setActive(label)}><Icon size={19}/><span>{label}</span></button>)}</nav>;
+}
