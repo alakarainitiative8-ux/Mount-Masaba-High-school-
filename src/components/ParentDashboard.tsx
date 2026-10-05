@@ -47,6 +47,14 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [registerName, setRegisterName] = useState('');
+  const [registerPhone, setRegisterPhone] = useState('');
+  const [registerStudentId, setRegisterStudentId] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerError, setRegisterError] = useState('');
+  const [registerMessage, setRegisterMessage] = useState('');
+  const [pendingApproval, setPendingApproval] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,7 +98,11 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
       ]);
       if (profileError) throw profileError;
       if (parentError) throw parentError;
-      if (!parent) throw new Error('Your account is not linked to a parent record yet. Please ask the school administrator to link it.');
+      if (!parent) {
+        setPendingApproval(true);
+        return;
+      }
+      setPendingApproval(false);
       setParentId(parent.id);
       setParentName(profile?.full_name || 'Parent');
 
@@ -241,8 +253,41 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
     if (error) setLoginError(error.message);
     setLoggingIn(false);
   }
+  async function registerParent(e: React.FormEvent) {
+    e.preventDefault();
+    setRegisterError(''); setRegisterMessage(''); setLoggingIn(true);
+    if (registerPassword.length < 8) {
+      setRegisterError('Use a password with at least 8 characters.');
+      setLoggingIn(false); return;
+    }
+    const email = loginEmail.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: registerPassword,
+      options: {
+        data: {
+          full_name: registerName.trim(),
+          phone: registerPhone.trim(),
+          student_id: registerStudentId.trim(),
+          requested_role: 'parent'
+        }
+      }
+    });
+    if (error) {
+      setRegisterError(error.message);
+    } else {
+      setRegisterMessage(data.session
+        ? 'Registration received. Your account is waiting for school administrator approval.'
+        : 'Registration received. Check your email if the school requires email confirmation, then wait for administrator approval.');
+      setAuthMode('login');
+      setLoginPassword('');
+      setPendingApproval(true);
+    }
+    setLoggingIn(false);
+  }
   async function signOut() {
     await supabase.auth.signOut();
+    setPendingApproval(false);
     if (onBack) onBack();
   }
   async function sendMessage(e: React.FormEvent) {
@@ -264,21 +309,45 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
       <header className="parentHeader"><button className="parentBrand" onClick={onBack}><img className="schoolLogo" src={logoUrl} alt="Mount Masaba High School"/><span><b>Mount Masaba</b><small>Parent Portal</small></span></button></header>
       <main className="parentAuthCard">
         <img className="authLogo" src={logoUrl} alt="Mount Masaba High School"/>
-        <span className="eyebrow">SECURE PARENT ACCESS</span>
-        <h1>Welcome back.</h1>
-        <p>Sign in to see your child’s live attendance, learning, results, timetable, fees and school messages.</p>
-        <form onSubmit={signIn}>
-          <label>Email<input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required autoComplete="email"/></label>
-          <label>Password<input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} required autoComplete="current-password"/></label>
-          {loginError && <div className="parentError">{loginError}</div>}
-          <button className="authSubmit" disabled={loggingIn}>{loggingIn ? 'Signing in…' : 'Sign in'} <ArrowRight size={16}/></button>
-        </form>
-        <small className="authHint">Your school administrator must create/link your parent account before child records appear here.</small>
+        <span className="eyebrow">PARENT PORTAL</span>
+        <div className="authModeSwitch"><button className={authMode==='login'?'active':''} onClick={()=>setAuthMode('login')}>Sign in</button><button className={authMode==='register'?'active':''} onClick={()=>setAuthMode('register')}>Register</button></div>
+        {authMode === 'login' ? <>
+          <h1>Welcome back.</h1>
+          <p>Sign in to see your child’s attendance, learning, results, timetable, fees and school messages.</p>
+          <form onSubmit={signIn}>
+            <label>Email<input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required autoComplete="email"/></label>
+            <label>Password<input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} required autoComplete="current-password"/></label>
+            {loginError && <div className="parentError">{loginError}</div>}
+            {registerMessage && <div className="parentSuccess">{registerMessage}</div>}
+            <button className="authSubmit" disabled={loggingIn}>{loggingIn ? 'Signing in…' : 'Sign in'} <ArrowRight size={16}/></button>
+          </form>
+          <small className="authHint">No OTP. New registrations are reviewed and approved by a school administrator.</small>
+        </> : <>
+          <h1>Create parent account.</h1>
+          <p>Register once, then the school administrator links your account to your learner.</p>
+          <form onSubmit={registerParent}>
+            <label>Full name<input value={registerName} onChange={e=>setRegisterName(e.target.value)} required autoComplete="name"/></label>
+            <label>Parent email<input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required autoComplete="email"/></label>
+            <label>Phone (optional)<input value={registerPhone} onChange={e=>setRegisterPhone(e.target.value)} autoComplete="tel"/></label>
+            <label>Student ID / Admission number<input value={registerStudentId} onChange={e=>setRegisterStudentId(e.target.value)} required placeholder="e.g. MMHS/001"/></label>
+            <label>Password<input type="password" value={registerPassword} onChange={e=>setRegisterPassword(e.target.value)} required minLength={8} autoComplete="new-password"/></label>
+            {registerError && <div className="parentError">{registerError}</div>}
+            <button className="authSubmit" disabled={loggingIn}>{loggingIn ? 'Creating account…' : 'Create account'} <ArrowRight size={16}/></button>
+          </form>
+          <small className="authHint">After registration, access stays locked until an administrator approves and links you to the student ID.</small>
+        </>}
       </main>
     </div>
   );
 
   if (loading) return <div className="parentApp parentLoading"><RefreshCw className="spin" size={24}/><p>Loading your family portal…</p></div>;
+
+  if (pendingApproval) return (
+    <div className="parentApp parentAuth">
+      <header className="parentHeader"><button className="parentBrand" onClick={()=>setActive('Home')}><img className="schoolLogo" src={logoUrl} alt="Mount Masaba High School"/><span><b>Mount Masaba</b><small>Parent Portal</small></span></button><button className="iconButton" onClick={signOut}><LogOut size={18}/></button></header>
+      <main className="parentAuthCard"><img className="authLogo" src={logoUrl} alt="Mount Masaba High School"/><span className="eyebrow">ADMIN APPROVAL</span><h1>Registration received.</h1><p>Your parent account is created, but the school must approve it and link it to your learner before the dashboard opens.</p><div className="approvalSteps"><span>✓ Account created</span><span>2&nbsp; Administrator review</span><span>3&nbsp; Parent dashboard access</span></div><button className="authSubmit" onClick={()=>loadPortal(true)}>Check approval <RefreshCw size={16}/></button><button className="secondaryAction" onClick={signOut}>Sign out</button></main>
+    </div>
+  );
 
   if (!children.length) return (
     <div className="parentApp parentAuth"><header className="parentHeader"><button className="parentBrand" onClick={onBack}><img className="schoolLogo" src={logoUrl} alt="Mount Masaba High School"/><span><b>Mount Masaba</b><small>Parent Portal</small></span></button><button className="iconButton" onClick={signOut}><LogOut size={18}/></button></header><main className="parentAuthCard"><img className="authLogo" src={logoUrl} alt="Mount Masaba High School"/><span className="eyebrow">ACCOUNT LINKING</span><h1>Almost there.</h1><p>{dataError || 'Your parent account is signed in, but no learner has been linked to it yet.'}</p><button className="authSubmit" onClick={()=>loadPortal()}>Check again <RefreshCw size={16}/></button></main></div>
