@@ -1048,3 +1048,9 @@ footer {
   .resultSummary>div{padding:16px}
   .parentSubpage{padding-bottom:100px}
 }
+
+.authModeSwitch{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;margin:18px 0 24px;background:#eef7fb;border:1px solid #d8eaf2;border-radius:14px}
+.authModeSwitch button{border:0;background:transparent;padding:11px 12px;border-radius:10px;color:#6c7d89;font-weight:800;cursor:pointer}
+.authModeSwitch button.active{background:#fff;color:#1976a5;box-shadow:0 4px 14px rgba(30,110,150,.12)}
+.authHint{display:block;margin-top:14px;color:#7b8b96;line-height:1.5}
+.secondaryAction{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:12px 16px;border:1px solid #d8e8f0;border-radius:12px;background:#fff;color:#49616f;font-weight:800;cursor:pointer}
