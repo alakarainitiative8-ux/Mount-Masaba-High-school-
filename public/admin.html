@@ -52,6 +52,7 @@ button{font:inherit;border:0;cursor:pointer}.app{min-height:100vh;display:flex}.
     <a href="#attendance"><span class="ico">✓</span><span>Attendance</span></a>
     <a href="#finance"><span class="ico">₦</span><span>Finance</span></a>
     <a href="#content"><span class="ico">✦</span><span>School Content</span></a>
+    <a href="#users"><span class="ico">♟</span><span>Users & Admins</span></a>
     <a href="#settings"><span class="ico">⚙</span><span>Settings</span></a>
   </nav>
   <div class="sideBottom"><button onclick="location.href='/'">← <span>Back to school site</span></button></div>
@@ -99,6 +100,10 @@ button{font:inherit;border:0;cursor:pointer}.app{min-height:100vh;display:flex}.
 <div class="welcome"><div><span class="eyebrow">STUDENT MANAGEMENT</span><h1>Students</h1><p>Search learners, view class placement and account status.</p></div></div>
 <div class="card"><div class="toolbar"><div class="searchBox">⌕ <input id="studentSearch" placeholder="Search by name or admission number..."/></div><button id="refreshStudents">↻ Refresh</button></div>
 <div class="tableWrap"><table class="dataTable"><thead><tr><th>Student</th><th>Admission</th><th>Class</th><th>Stream</th><th>Status</th></tr></thead><tbody id="studentsBody"><tr><td colspan="5" class="emptyState">Loading student records…</td></tr></tbody></table></div></div>
+<section class="adminView" data-view="users">
+<div class="welcome"><div><span class="eyebrow">USER & ADMIN MANAGEMENT</span><h1>Users & Admins</h1><p>Manage registered accounts. Only an existing admin can grant admin access.</p></div></div>
+<div class="card"><div class="toolbar"><div class="searchBox">⌕ <input id="userSearch" placeholder="Search by name or email..."/></div><button id="refreshUsers">↻ Refresh</button></div>
+<div class="tableWrap"><table class="dataTable"><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody id="usersBody"><tr><td colspan="4" class="emptyState">Loading users…</td></tr></tbody></table></div></div>
 </section></div>
 </main>
 </div>
@@ -111,11 +116,12 @@ const links=[...document.querySelectorAll('.nav a')];links.forEach(a=>a.addEvent
 <script>
 const SB_URL='https://bpxfyvxqciktrahaxkws.supabase.co',SB_KEY='sb_publishable_mW5V6o9vpzI9Z8sPcip01A_N6zNZWiL';
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-const gate=document.getElementById('loginGate'),registerGate=document.getElementById('adminRegisterGate'),loginMsg=document.getElementById('loginMsg'),dashboard=document.getElementById('dashboard'),studentView=document.querySelector('[data-view="students"]'),navLinks=[...document.querySelectorAll('.nav a')];
+const gate=document.getElementById('loginGate'),registerGate=document.getElementById('adminRegisterGate'),loginMsg=document.getElementById('loginMsg'),dashboard=document.getElementById('dashboard'),studentView=document.querySelector('[data-view="students"]'),userView=document.querySelector('[data-view="users"]'),navLinks=[...document.querySelectorAll('.nav a')];
 let studentRows=[];
 function showView(name){
-if(name==='students'){[...dashboard.children].forEach(x=>x.style.display=x===studentView?'block':'none');studentView.classList.add('active');loadStudents();}
-else{[...dashboard.children].forEach(x=>x.style.display='');studentView.classList.remove('active');}
+if(name==='students'){[...dashboard.children].forEach(x=>x.style.display=x===studentView?'block':'none');studentView.classList.add('active');userView.classList.remove('active');loadStudents();}
+else if(name==='users'){[...dashboard.children].forEach(x=>x.style.display=x===userView?'block':'none');userView.classList.add('active');studentView.classList.remove('active');loadUsers();}
+else{[...dashboard.children].forEach(x=>x.style.display='');studentView.classList.remove('active');userView.classList.remove('active');}
 navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+name));
 document.querySelector('.crumb b').textContent=name==='dashboard'?'Dashboard':name[0].toUpperCase()+name.slice(1);
 }
@@ -124,7 +130,28 @@ document.getElementById('adminLogin').addEventListener('submit',async e=>{e.prev
 async function initAdmin(){const {data:{session}}=await sb.auth.getSession();if(session)gate.classList.add('hidden');}
 async function loadStudents(){const body=document.getElementById('studentsBody');body.innerHTML='<tr><td colspan="5" class="emptyState">Loading student records…</td></tr>';const {data,error}=await sb.from('students').select('id,admission_number,status,profiles:profile_id(full_name),classes:current_class_id(name,level),streams:current_stream_id(name)').order('admission_number');if(error){body.innerHTML='<tr><td colspan="5" class="emptyState">Could not load students: '+error.message+'</td></tr>';return;}studentRows=data||[];renderStudents();}
 function renderStudents(){const q=document.getElementById('studentSearch').value.toLowerCase().trim();const rows=studentRows.filter(s=>(s.profiles?.full_name||'').toLowerCase().includes(q)||(s.admission_number||'').toLowerCase().includes(q));const body=document.getElementById('studentsBody');if(!rows.length){body.innerHTML='<tr><td colspan="5" class="emptyState">No matching students found.</td></tr>';return;}body.innerHTML=rows.map(s=>{const name=s.profiles?.full_name||'Student',initials=name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();return '<tr><td><div class="studentCell"><div class="studentAvatar">'+initials+'</div><div><b>'+name+'</b><div style="font-size:10px;color:#718096">Learner account</div></div></div></td><td>'+(s.admission_number||'—')+'</td><td>'+(s.classes?.name||'—')+'</td><td>'+(s.streams?.name||'—')+'</td><td><span class="pill '+(s.status==='active'?'active':'')+'">'+(s.status||'unknown')+'</span></td></tr>'}).join('');}
-document.getElementById('studentSearch').addEventListener('input',renderStudents);document.getElementById('refreshStudents').addEventListener('click',loadStudents);initAdmin();
+document.getElementById('studentSearch').addEventListener('input',renderStudents);document.getElementById('refreshStudents').addEventListener('click',loadStudents);
+async function loadUsers(){
+const body=document.getElementById('usersBody'); body.innerHTML='<tr><td colspan="4" class="emptyState">Loading users…</td></tr>';
+const {data,error}=await sb.from('profiles').select('id,full_name,role,is_active').order('full_name');
+if(error){body.innerHTML='<tr><td colspan="4" class="emptyState">Could not load users: '+error.message+'</td></tr>';return;}
+window.adminUsers=data||[]; renderUsers();
+}
+function renderUsers(){
+const q=document.getElementById('userSearch').value.toLowerCase().trim();
+const rows=(window.adminUsers||[]).filter(u=>(u.full_name||'').toLowerCase().includes(q)||(u.role||'').toLowerCase().includes(q));
+const body=document.getElementById('usersBody');
+if(!rows.length){body.innerHTML='<tr><td colspan="4" class="emptyState">No users found.</td></tr>';return;}
+body.innerHTML=rows.map(u=>'<tr><td><div class="studentCell"><div class="studentAvatar">'+(u.full_name||'U').split(/\\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()+'</div><div><b>'+(u.full_name||'Unnamed user')+'</b><div style="font-size:10px;color:#718096">'+u.id+'</div></div></div></td><td><span class="pill '+(u.role==='admin'?'active':'')+'">'+(u.role||'pending')+'</span></td><td>'+(u.is_active?'Active':'Inactive')+'</td><td>'+(u.role==='admin'?'<span class="badge">Administrator</span>':'<button style="background:#0b294b;color:#fff;border-radius:9px;padding:8px 11px;font-size:11px" onclick="makeAdmin(\\''+u.id+'\\')">Make admin</button>')+'</td></tr>').join('');
+}
+async function makeAdmin(id){
+if(!confirm('Make this user an administrator?')) return;
+const {error}=await sb.rpc('admin_create_admin',{target_profile_id:id});
+if(error){alert('Could not make admin: '+error.message);return;}
+alert('User is now an administrator.'); loadUsers();
+}
+document.getElementById('userSearch').addEventListener('input',renderUsers);
+document.getElementById('refreshUsers').addEventListener('click',loadUsers);initAdmin();
 
 document.getElementById('showAdminRegister').addEventListener('click',()=>{gate.style.display='none';registerGate.style.display='flex';});
 document.getElementById('backToAdminLogin').addEventListener('click',()=>{registerGate.style.display='none';gate.style.display='flex';});
