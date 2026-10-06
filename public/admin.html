@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin • Mount Masaba High School</title>
+<style>
+:root{--navy:#071b34;--navy2:#0b294b;--blue:#1687d9;--sky:#eaf6ff;--ink:#10233b;--muted:#718096;--line:#e6edf5;--white:#fff;--green:#18a56b;--gold:#f4b942}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f8fc;color:var(--ink)}
+button{font:inherit;border:0;cursor:pointer}.app{min-height:100vh;display:flex}.sidebar{width:255px;background:linear-gradient(180deg,var(--navy),#092849);color:white;padding:20px 15px;position:fixed;inset:0 auto 0 0;z-index:5}.brand{display:flex;gap:10px;align-items:center;padding:8px 10px 24px}.brand img{width:42px;height:42px;object-fit:contain;border-radius:12px;background:#fff}.brand b{display:block;font-size:14px}.brand small{opacity:.6;font-size:10px;letter-spacing:1px}.label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;opacity:.45;padding:15px 12px 8px}.nav a{display:flex;align-items:center;gap:12px;color:#d8e8f8;text-decoration:none;padding:11px 12px;border-radius:11px;margin:3px 0;font-size:13px}.nav a.active,.nav a:hover{background:rgba(255,255,255,.11);color:white}.nav .ico{width:22px;text-align:center}.sideBottom{position:absolute;bottom:16px;left:15px;right:15px}.sideBottom button{width:100%;background:rgba(255,255,255,.08);color:#fff;border-radius:11px;padding:10px;text-align:left}.main{margin-left:255px;width:calc(100% - 255px)}.top{height:74px;background:white;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 30px;position:sticky;top:0;z-index:4}.crumb{font-size:12px;color:var(--muted)}.crumb b{color:var(--ink)}.topright{display:flex;align-items:center;gap:16px}.status{font-size:11px;color:var(--green);background:#e9fbf3;padding:7px 10px;border-radius:20px}.admin{display:flex;align-items:center;gap:9px;font-size:12px}.avatar{width:34px;height:34px;border-radius:50%;background:var(--sky);display:grid;place-items:center;color:var(--blue);font-weight:800}.content{padding:30px;max-width:1500px;margin:auto}.welcome{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:25px}.eyebrow{font-size:10px;letter-spacing:1.8px;color:var(--blue);font-weight:800}.welcome h1{margin:6px 0 5px;font-size:30px;letter-spacing:-.7px}.welcome p{margin:0;color:var(--muted);font-size:13px}.date{background:white;border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 20px rgba(20,50,80,.035)}.stat{display:flex;justify-content:space-between;align-items:flex-start}.stat .icon{width:38px;height:38px;border-radius:11px;background:var(--sky);display:grid;place-items:center;color:var(--blue);font-size:17px}.stat small{display:block;color:var(--muted);font-size:11px}.stat strong{font-size:26px;display:block;margin:5px 0}.up{color:var(--green);font-size:10px}.section{margin-top:18px;display:grid;grid-template-columns:1.45fr .85fr;gap:18px}.cardHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.cardHead h2{font-size:15px;margin:0}.cardHead a{font-size:11px;color:var(--blue);text-decoration:none}.rows{display:grid;gap:9px}.row{display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--line);border-radius:12px}.person{display:flex;align-items:center;gap:10px}.mini{width:32px;height:32px;border-radius:9px;background:#edf5fb;display:grid;place-items:center;font-size:12px;font-weight:700;color:#2875a8}.person b{display:block;font-size:12px}.person small{color:var(--muted);font-size:10px}.badge{font-size:9px;padding:5px 8px;border-radius:20px;background:#eef7ff;color:#1687d9}.quick{display:grid;grid-template-columns:1fr 1fr;gap:9px}.quick button{background:#f8fbfe;border:1px solid var(--line);border-radius:12px;text-align:left;padding:13px;color:var(--ink)}.quick b{display:block;font-size:11px}.quick small{font-size:9px;color:var(--muted)}.activity{display:grid;gap:12px}.activityItem{display:flex;gap:10px}.dot{width:8px;height:8px;border-radius:50%;background:var(--blue);margin-top:5px;flex:none}.activityItem b{font-size:11px}.activityItem p{margin:2px 0 0;font-size:10px;color:var(--muted)}.notice{margin-top:18px;background:linear-gradient(100deg,#eaf6ff,#f8fcff);border:1px solid #d9ecfb;border-radius:16px;padding:18px;display:flex;justify-content:space-between;align-items:center}.notice b{font-size:13px}.notice p{margin:4px 0 0;color:var(--muted);font-size:11px}.notice button{background:var(--navy);color:white;border-radius:10px;padding:9px 13px;font-size:11px}.mobile{display:none}
+@media(max-width:850px){.sidebar{width:70px;padding:15px 8px}.brand div,.label,.nav span:not(.ico),.sideBottom span{display:none}.brand{justify-content:center;padding-bottom:20px}.brand img{width:40px}.nav a{justify-content:center}.main{margin-left:70px;width:calc(100% - 70px)}.top{padding:0 15px}.content{padding:18px}.grid{grid-template-columns:1fr 1fr}.section{grid-template-columns:1fr}.welcome{align-items:start;flex-direction:column}.date{display:none}}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.welcome h1{font-size:24px}.top{height:62px}.status{display:none}.content{padding:14px}.card{padding:15px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba"/><div><b>Mount Masaba</b><small>ADMIN CONSOLE</small></div></div>
+  <div class="label">Main</div>
+  <nav class="nav">
+    <a class="active" href="#dashboard"><span class="ico">⌂</span><span>Dashboard</span></a>
+    <a href="#students"><span class="ico">♙</span><span>Students</span></a>
+    <a href="#parents"><span class="ico">♧</span><span>Parents</span></a>
+    <a href="#teachers"><span class="ico">▣</span><span>Teachers</span></a>
+    <a href="#classes"><span class="ico">▤</span><span>Classes & Streams</span></a>
+    <a href="#academics"><span class="ico">◆</span><span>Academics</span></a>
+    <a href="#results"><span class="ico">◒</span><span>Results</span></a>
+    <a href="#attendance"><span class="ico">✓</span><span>Attendance</span></a>
+    <a href="#finance"><span class="ico">₦</span><span>Finance</span></a>
+    <a href="#content"><span class="ico">✦</span><span>School Content</span></a>
+    <a href="#settings"><span class="ico">⚙</span><span>Settings</span></a>
+  </nav>
+  <div class="sideBottom"><button onclick="location.href='/'">← <span>Back to school site</span></button></div>
+</aside>
+<main class="main">
+<header class="top"><div class="crumb">Admin / <b>Dashboard</b></div><div class="topright"><span class="status">● System online</span><div class="admin"><div class="avatar">A</div><span>School Admin</span></div></div></header>
+<div class="content" id="dashboard">
+  <div class="welcome"><div><span class="eyebrow">ADMINISTRATION • MOUNT MASABA HIGH SCHOOL</span><h1>Good afternoon, Admin 👋</h1><p>One place to manage the school, learners, staff and academic operations.</p></div><div class="date" id="date"></div></div>
+  <section class="grid">
+    <article class="card stat"><div><small>Total students</small><strong>1,000+</strong><span class="up">↑ Active school population</span></div><div class="icon">♙</div></article>
+    <article class="card stat"><div><small>Teaching staff</small><strong>100+</strong><span class="up">↑ Staff records</span></div><div class="icon">▣</div></article>
+    <article class="card stat"><div><small>AI teachers</small><strong>18</strong><span class="up">● Ready for portal</span></div><div class="icon">✦</div></article>
+    <article class="card stat"><div><small>System status</small><strong>Online</strong><span class="up">● Supabase connected</span></div><div class="icon">✓</div></article>
+  </section>
+  <section class="section">
+    <article class="card" id="students"><div class="cardHead"><h2>Recent student activity</h2><a href="#students">View students →</a></div><div class="rows">
+      <div class="row"><div class="person"><div class="mini">JM</div><div><b>Student records</b><small>Admissions, class and profile data</small></div></div><span class="badge">Manage</span></div>
+      <div class="row"><div class="person"><div class="mini">PR</div><div><b>Parent accounts</b><small>Linked guardians and communication</small></div></div><span class="badge">Manage</span></div>
+      <div class="row"><div class="person"><div class="mini">GR</div><div><b>Grades & results</b><small>Academic records and reports</small></div></div><span class="badge">Manage</span></div>
+    </div></article>
+    <article class="card" id="content"><div class="cardHead"><h2>Quick actions</h2></div><div class="quick">
+      <button onclick="alert('Student management will connect to Supabase next.')"><b>＋ Add student</b><small>Create a learner record</small></button>
+      <button onclick="alert('Teacher management will connect to Supabase next.')"><b>＋ Add teacher</b><small>Create a staff record</small></button>
+      <button><b>▤ New class</b><small>Set class and stream</small></button>
+      <button><b>✦ AI teachers</b><small>Manage all 18 teachers</small></button>
+      <button><b>◒ Enter results</b><small>Academic results</small></button>
+      <button><b>↗ Publish news</b><small>School website content</small></button>
+    </div></article>
+  </section>
+  <section class="section">
+    <article class="card" id="academics"><div class="cardHead"><h2>School operations</h2><a href="#settings">Settings →</a></div><div class="rows">
+      <div class="row"><div class="person"><div class="mini">A</div><div><b>Academics</b><small>18-subject O-Level / A-Level structure</small></div></div><span class="badge">Ready</span></div>
+      <div class="row" id="attendance"><div class="person"><div class="mini">✓</div><div><b>Attendance</b><small>Daily learner attendance</small></div></div><span class="badge">Open</span></div>
+      <div class="row" id="finance"><div class="person"><div class="mini">₦</div><div><b>Finance</b><small>Fees and payment records</small></div></div><span class="badge">Secure</span></div>
+    </div></article>
+    <article class="card"><div class="cardHead"><h2>Recent activity</h2></div><div class="activity">
+      <div class="activityItem"><span class="dot"></span><div><b>Student portal is live</b><p>Student authentication and dashboard are connected.</p></div></div>
+      <div class="activityItem"><span class="dot"></span><div><b>Parent portal workspace</b><p>Parent dashboard is being connected to school data.</p></div></div>
+      <div class="activityItem"><span class="dot"></span><div><b>Admin console created</b><p>This is the new central management workspace.</p></div></div>
+    </div></article>
+  </section>
+  <div class="notice"><div><b>Next build step: secure admin authentication + Supabase management.</b><p>The interface is ready; the next layer will restrict this console to authorized school administrators.</p></div><button onclick="alert('Admin authentication is the next connection.')">Secure console →</button></div>
+</div>
+</main>
+</div>
+<script>
+document.getElementById('date').textContent=new Intl.DateTimeFormat(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).format(new Date());
+const links=[...document.querySelectorAll('.nav a')];links.forEach(a=>a.addEventListener('click',()=>{links.forEach(x=>x.classList.remove('active'));a.classList.add('active')}));
+</script>
+</body>
+</html>
