@@ -179,7 +179,21 @@ alert('User is now an administrator.'); loadUsers();
 document.getElementById('userSearch').addEventListener('input',renderUsers);
 document.getElementById('refreshUsers').addEventListener('click',loadUsers);initAdmin();
 
-document.getElementById('showAdminRegister').addEventListener('click',()=>{gate.style.display='none';registerGate.style.display='flex';});
+document.getElementById('showAdminRegister').addEventListener('click',function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  gate.classList.add('hidden');
+  gate.style.display='none';
+  registerGate.style.display='flex';
+  registerGate.classList.remove('hidden');
+  document.getElementById('regMsg').textContent='';
+});
+document.getElementById('backToAdminLogin').addEventListener('click',function(e){
+  e.preventDefault();
+  registerGate.style.display='none';
+  gate.style.display='flex';
+  gate.classList.remove('hidden');
+});
 document.getElementById('backToAdminLogin').addEventListener('click',()=>{registerGate.style.display='none';gate.style.display='flex';});
 document.getElementById('adminRegister').addEventListener('submit',async e=>{
 e.preventDefault(); const msg=document.getElementById('regMsg'); msg.textContent='Creating registration…';
