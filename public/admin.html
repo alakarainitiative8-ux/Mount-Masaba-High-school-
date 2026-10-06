@@ -126,8 +126,34 @@ navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+nam
 document.querySelector('.crumb b').textContent=name==='dashboard'?'Dashboard':name[0].toUpperCase()+name.slice(1);
 }
 navLinks.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showView(a.getAttribute('href').slice(1));}));
-document.getElementById('adminLogin').addEventListener('submit',async e=>{e.preventDefault();loginMsg.textContent='Signing in…';const {error}=await sb.auth.signInWithPassword({email:adminEmail.value.trim(),password:adminPassword.value});if(error){loginMsg.textContent=error.message;return;}gate.classList.add('hidden');});
-async function initAdmin(){const {data:{session}}=await sb.auth.getSession();if(session)gate.classList.add('hidden');}
+document.getElementById('adminLogin').addEventListener('submit',async e=>{
+e.preventDefault();
+const msg=document.getElementById('loginMsg'), email=document.getElementById('adminEmail').value.trim(), password=document.getElementById('adminPassword').value;
+msg.style.color='#b42318'; msg.textContent='Signing in…';
+if(!email||!password){msg.textContent='Enter your admin email and password.';return;}
+try{
+ const result=await Promise.race([
+   sb.auth.signInWithPassword({email,password}),
+   new Promise((_,reject)=>setTimeout(()=>reject(new Error('Sign-in timed out. Check your internet connection and try again.')),15000))
+ ]);
+ const {data,error}=result;
+ if(error){msg.textContent=error.message;return;}
+ if(!data.session){msg.textContent='Sign-in completed but no session was returned. Check email confirmation settings.';return;}
+ const {data:profile,error:profileError}=await sb.from('profiles').select('role,is_active').eq('id',data.session.user.id).single();
+ if(profileError){await sb.auth.signOut();msg.textContent='Signed in, but your school profile could not be verified. Contact the school administrator.';return;}
+ if(profile.role!=='admin'||profile.is_active===false){await sb.auth.signOut();msg.textContent='This account is not an authorized admin yet. An existing admin must approve it.';return;}
+ gate.classList.add('hidden'); msg.textContent='';
+}catch(err){msg.textContent=err?.message||'Unable to sign in. Please try again.';}
+});
+async function initAdmin(){
+try{
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session)return;
+ const {data:profile}=await sb.from('profiles').select('role,is_active').eq('id',session.user.id).single();
+ if(profile?.role==='admin'&&profile?.is_active!==false)gate.classList.add('hidden');
+ else await sb.auth.signOut();
+}catch(err){console.error('Admin session check failed',err);}
+}
 async function loadStudents(){const body=document.getElementById('studentsBody');body.innerHTML='<tr><td colspan="5" class="emptyState">Loading student records…</td></tr>';const {data,error}=await sb.from('students').select('id,admission_number,status,profiles:profile_id(full_name),classes:current_class_id(name,level),streams:current_stream_id(name)').order('admission_number');if(error){body.innerHTML='<tr><td colspan="5" class="emptyState">Could not load students: '+error.message+'</td></tr>';return;}studentRows=data||[];renderStudents();}
 function renderStudents(){const q=document.getElementById('studentSearch').value.toLowerCase().trim();const rows=studentRows.filter(s=>(s.profiles?.full_name||'').toLowerCase().includes(q)||(s.admission_number||'').toLowerCase().includes(q));const body=document.getElementById('studentsBody');if(!rows.length){body.innerHTML='<tr><td colspan="5" class="emptyState">No matching students found.</td></tr>';return;}body.innerHTML=rows.map(s=>{const name=s.profiles?.full_name||'Student',initials=name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();return '<tr><td><div class="studentCell"><div class="studentAvatar">'+initials+'</div><div><b>'+name+'</b><div style="font-size:10px;color:#718096">Learner account</div></div></div></td><td>'+(s.admission_number||'—')+'</td><td>'+(s.classes?.name||'—')+'</td><td>'+(s.streams?.name||'—')+'</td><td><span class="pill '+(s.status==='active'?'active':'')+'">'+(s.status||'unknown')+'</span></td></tr>'}).join('');}
 document.getElementById('studentSearch').addEventListener('input',renderStudents);document.getElementById('refreshStudents').addEventListener('click',loadStudents);
