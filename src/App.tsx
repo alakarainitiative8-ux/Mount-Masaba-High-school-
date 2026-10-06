@@ -115,12 +115,6 @@ function StudentDashboard({ onBack }) {
   const className = student?.classes?.name || 'Class pending';
   const levelName = student?.classes?.level === 'a_level' ? 'A-Level' : student?.classes?.level === 'o_level' ? 'O-Level' : 'Level pending';
   const streamName = student?.streams?.name || 'Stream pending';
-  const [currentTime, setCurrentTime] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => window.clearInterval(timer);
-  }, []);
-  const greeting = getStudentGreeting(currentTime.getHours());
   const nav = ['Home','Learning','AI Teachers','Tasks','Results','Profile'];
   const subjects = [
     ['Mathematics','Continue learning','—'],
