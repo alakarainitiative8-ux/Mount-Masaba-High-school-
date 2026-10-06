@@ -24,6 +24,9 @@ type TimetableRow = { id: string; start_time: string; end_time: string; room: st
 type MessageRow = { id: string; subject: string; body: string; created_at: string; read_at: string | null };
 type FeeRow = { id: string; student_id: string; total_amount: number; amount_paid: number; currency: string; due_date: string | null; status: string };
 type NoticeRow = { id: string; title: string; body: string; published_at: string | null };
+type AttendanceRow = { id: string; attendance_date: string; status: string; note: string | null };
+type MaterialRow = { id: string; title: string; description: string | null; bucket_path: string; mime_type: string | null; class_subject_id: string };
+type ReportCardRow = { id: string; average_score: number | null; position: number | null; class_size: number | null; teacher_comment: string | null; head_comment: string | null; pdf_path: string | null; published_at: string | null };
 
 const logoUrl = 'https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo';
 
@@ -72,6 +75,11 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [timetable, setTimetable] = useState<TimetableRow[]>([]);
   const [notices, setNotices] = useState<NoticeRow[]>([]);
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRow[]>([]);
+  const [materials, setMaterials] = useState<MaterialRow[]>([]);
+  const [reportCards, setReportCards] = useState<ReportCardRow[]>([]);
+  const [liveNotification, setLiveNotification] = useState('');
+  const [materialUrls, setMaterialUrls] = useState<Record<string,string>>({});
   const [attendancePct, setAttendancePct] = useState<number | null>(null);
   const [average, setAverage] = useState<number | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
@@ -152,12 +160,12 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
       const selected = childList.find(c => c.id === childId) || childList[0];
       setChildId(selected.id);
 
-      const [{ data: subjectLinks }, { data: attendance }, { data: grades }, { data: examResults }, { data: reportCards }, { data: progressRows }] = await Promise.all([
+      const [{ data: subjectLinks }, { data: attendance }, { data: grades }, { data: examResults }, { data: reportCardRows }, { data: progressRows }] = await Promise.all([
         supabase.from('student_subjects').select('class_subject_id').eq('student_id', selected.id),
         supabase.from('attendance').select('status').eq('student_id', selected.id),
         supabase.from('grades').select('score,max_score,class_subject_id').eq('student_id', selected.id),
         supabase.from('exam_results').select('marks,max_marks,class_subject_id,is_published').eq('student_id', selected.id).eq('is_published', true),
-        supabase.from('report_cards').select('average_score').eq('student_id', selected.id).eq('status', 'published').order('created_at', { ascending: false }).limit(1),
+        supabase.from('report_cards').select('id,average_score,position,class_size,teacher_comment,head_comment,pdf_path,published_at').eq('student_id', selected.id).eq('status', 'published').order('created_at', { ascending: false }).limit(10),
         supabase.from('student_progress').select('completion_percent,average_score,class_subject_id').eq('student_id', selected.id)
       ]);
 
@@ -196,7 +204,9 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
       const gradeValues = (grades || []).filter(g => g.max_score != null).map(g => Number(g.score) / Number(g.max_score) * 100);
       const examValues = (examResults || []).filter(g => g.max_marks != null).map(g => Number(g.marks) / Number(g.max_marks) * 100);
       const allMarks = [...gradeValues, ...examValues];
-      const reportAverage = reportCards?.[0]?.average_score;
+      const reportAverage = reportCardRows?.[0]?.average_score;
+      setReportCards((reportCardRows || []) as ReportCardRow[]);
+      setAttendanceHistory((attendance || []) as AttendanceRow[]);
       setAverage(reportAverage != null ? Number(reportAverage) : allMarks.length ? Math.round(allMarks.reduce((a,b)=>a+b,0)/allMarks.length) : null);
       const progVals = (progressRows || []).map(p => Number(p.completion_percent ?? 0)).filter(Boolean);
       setProgress(progVals.length ? Math.round(progVals.reduce((a,b)=>a+b,0)/progVals.length) : null);
@@ -224,6 +234,17 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
       setNotices([...(announcements || []).map(n=>({id:n.id,title:n.title,body:n.body,published_at:n.published_at})), ...(eventRows || []).map(e=>({id:e.id,title:e.title,body:e.description||e.location||'School event',published_at:e.starts_at}))].slice(0,10));
       setFees((feeRows || []) as FeeRow[]);
       setMessages((messageRows || []) as MessageRow[]);
+
+      const { data: materialRows } = subjectClassIds.length
+        ? await supabase.from('learning_materials').select('id,title,description,bucket_path,mime_type,class_subject_id').in('class_subject_id', subjectClassIds).eq('status','published').order('created_at',{ascending:false}).limit(30)
+        : { data: [] as any[] };
+      setMaterials((materialRows || []) as MaterialRow[]);
+      const urls: Record<string,string> = {};
+      for (const m of (materialRows || [])) {
+        const { data: signed } = await supabase.storage.from('Mount Masaba High School').createSignedUrl(m.bucket_path, 3600);
+        if (signed?.signedUrl) urls[m.id] = signed.signedUrl;
+      }
+      setMaterialUrls(urls);
     } catch (error: any) {
       setDataError(error?.message || 'Unable to load your parent portal data.');
     } finally {
@@ -246,6 +267,18 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
     });
     return () => { mounted=false; listener.subscription.unsubscribe(); };
   }, [loadPortal]);
+
+  useEffect(() => {
+    if (!parentId || !childId) return;
+    const channel = supabase.channel('parent-live-' + parentId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => { setLiveNotification('New school notice available.'); loadPortal(true); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => { setLiveNotification('School calendar updated.'); loadPortal(true); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parent_messages', filter: 'parent_id=eq.' + parentId }, () => { setLiveNotification('Your school messages were updated.'); loadPortal(true); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: 'student_id=eq.' + childId }, () => { setLiveNotification('Attendance was updated.'); loadPortal(true); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'grades', filter: 'student_id=eq.' + childId }, () => { setLiveNotification('Academic results were updated.'); loadPortal(true); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [parentId, childId, loadPortal]);
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault(); setLoggingIn(true); setLoginError('');
@@ -368,7 +401,7 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
       </header>
 
       <main className="parentContent">
-        {dataError && <div className="parentDataBanner">{dataError}<button onClick={()=>loadPortal(true)}><RefreshCw size={14}/></button></div>}
+        {dataError && <div className="parentDataBanner">{dataError}<button onClick={()=>loadPortal(true)}><RefreshCw size={14}/></button></div>}{liveNotification && <div className="parentDataBanner liveNotice">{liveNotification}<button onClick={()=>setLiveNotification('')}>Dismiss</button></div>}
         {active === 'Home' && <>
           <section className="parentWelcome"><div><span className="eyebrow">FAMILY PORTAL</span><h1>Good evening, {parentName.split(' ')[0]} <span>✦</span></h1><p>Here’s what matters most about your child’s school day.</p></div><div className="connectionChip"><span/>Live Supabase data</div></section>
           <section className="childSelectorWrap"><button className="childSelector" onClick={()=>setShowChildren(v=>!v)}><span className="childAvatar sunrise">{child.initials}</span><span className="childMeta"><b>{child.name}</b><small>{child.level || 'Class'} • {child.track || 'School'}</small></span><ChevronDown size={17}/></button>{showChildren&&<div className="childMenu">{children.map(c=><button key={c.id} onClick={()=>{setChildId(c.id);setShowChildren(false)}}><span className="childAvatar sunrise">{c.initials}</span><span><b>{c.name}</b><small>{c.level} • {c.track}</small></span>{c.id===child.id&&<CheckCircle2 size={17}/>}</button>)}</div>}</section>
@@ -382,11 +415,11 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
           <section className="parentSection reassurance"><Heart size={18}/><div><b>You’re doing great as a parent.</b><p>The portal is here to make staying involved simple—not stressful.</p></div></section>
         </>}
 
-        {active === 'Learning' && <Page title="Learning" eyebrow="YOUR CHILD'S LEARNING"><div className="liveGrid"><Panel title="Assignments" icon={<FileText size={18}/>}>{assignments.length?assignments.map(a=><div className="liveRow" key={a.id}><div><b>{a.title}</b><small>{a.subject} • Due {formatDate(a.due_at)}</small></div><strong>{a.status}</strong></div>):<Empty text="No published assignments for this learner yet."/>}</Panel><Panel title="Today's timetable" icon={<CalendarDays size={18}/>}>{timetable.length?timetable.map(t=><div className="liveRow" key={t.id}><div><b>{t.subject}</b><small>{formatTime(t.start_time)}–{formatTime(t.end_time)} • {t.room||'Room TBA'}</small></div></div>):<Empty text="No timetable entries are published for this class."/>}</Panel><Panel title="Learning resources" icon={<BookOpen size={18}/>}><Empty text="Published learning materials will appear here as the school adds them."/></Panel></div></Page>}
+        {active === 'Learning' && <Page title="Learning" eyebrow="YOUR CHILD'S LEARNING"><div className="liveGrid"><Panel title="Assignments" icon={<FileText size={18}/>}>{assignments.length?assignments.map(a=><div className="liveRow" key={a.id}><div><b>{a.title}</b><small>{a.subject} • Due {formatDate(a.due_at)}</small></div><strong>{a.status}</strong></div>):<Empty text="No published assignments for this learner yet."/>}</Panel><Panel title="Today's timetable" icon={<CalendarDays size={18}/>}>{timetable.length?timetable.map(t=><div className="liveRow" key={t.id}><div><b>{t.subject}</b><small>{formatTime(t.start_time)}–{formatTime(t.end_time)} • {t.room||'Room TBA'}</small></div></div>):<Empty text="No timetable entries are published for this class."/>}</Panel><Panel title="Learning resources" icon={<BookOpen size={18}/>}><div className="resourceList">{materials.length ? materials.map(m=><div className="liveRow" key={m.id}><div><b>{m.title}</b><small>{m.description || m.mime_type || 'Learning material'}</small></div>{materialUrls[m.id] ? <a className="secondaryAction resourceLink" href={materialUrls[m.id]} target="_blank" rel="noreferrer">Open</a> : <strong>Available</strong>}</div>) : <Empty text="No published learning materials for this learner yet."/>}</div></Panel></div></Page>}
 
-        {active === 'Results' && <Page title="Results" eyebrow="ACADEMIC PROGRESS"><div className="resultSummary"><div><span>AVERAGE</span><b>{avg}%</b><small>Published academic data</small></div><div><span>PROGRESS</span><b>{pulse}%</b><small>Learning progress</small></div><div><span>SUBJECTS</span><b>{subjects.length}</b><small>Connected subjects</small></div></div><Panel title="Subject performance" icon={<TrendingUp size={18}/>}><div className="subjectList">{subjects.map(s=><div className="subjectRow" key={s.id}><span className="subjectDot"/><div><b>{s.name}</b><small>{s.progress}% progress</small></div><strong>{s.score}%</strong><span className="trend">Live</span><div className="meter"><i style={{width:s.score+'%'}}/></div></div>)}{!subjects.length&&<Empty text="No published subject results yet."/>}</div></Panel><Panel title="Report cards" icon={<FileText size={18}/>}><Empty text="Published report-card documents will appear here when the school releases them."/></Panel></Page>}
+        {active === 'Results' && <Page title="Results" eyebrow="ACADEMIC PROGRESS"><div className="resultSummary"><div><span>AVERAGE</span><b>{avg}%</b><small>Published academic data</small></div><div><span>PROGRESS</span><b>{pulse}%</b><small>Learning progress</small></div><div><span>SUBJECTS</span><b>{subjects.length}</b><small>Connected subjects</small></div></div><Panel title="Subject performance" icon={<TrendingUp size={18}/>}><div className="subjectList">{subjects.map(s=><div className="subjectRow" key={s.id}><span className="subjectDot"/><div><b>{s.name}</b><small>{s.progress}% progress</small></div><strong>{s.score}%</strong><span className="trend">Live</span><div className="meter"><i style={{width:s.score+'%'}}/></div></div>)}{!subjects.length&&<Empty text="No published subject results yet."/>}</div></Panel><Panel title="Report cards" icon={<FileText size={18}/>}><div>{reportCards.length ? reportCards.map(r=><div className="liveRow" key={r.id}><div><b>{r.average_score != null ? Math.round(Number(r.average_score)) + '% average' : 'Published report card'}</b><small>{r.position && r.class_size ? 'Position ' + r.position + ' of ' + r.class_size : 'Published ' + formatDate(r.published_at)}</small></div>{r.pdf_path ? <span><b>PDF ready</b></span> : <strong>View online</strong>}</div>) : <Empty text="No published report cards yet."/>}</div></Panel></Page>}
 
-        {active === 'Attendance' && <Page title="Attendance" eyebrow="SCHOOL ATTENDANCE"><div className="resultSummary"><div><span>ATTENDANCE</span><b>{attendance}%</b><small>{attendance>=90?'Excellent standing':'Needs attention'}</small></div></div><Panel title="Attendance history" icon={<CheckCircle2 size={18}/>}><Empty text="Detailed attendance history is available from the school's attendance records. This dashboard currently summarizes the published records."/><button className="secondaryAction" onClick={()=>loadPortal(true)}>Refresh records <RefreshCw size={15}/></button></Panel></Page>}
+        {active === 'Attendance' && <Page title="Attendance" eyebrow="SCHOOL ATTENDANCE"><div className="resultSummary"><div><span>ATTENDANCE</span><b>{attendance}%</b><small>{attendance>=90?'Excellent standing':'Needs attention'}</small></div></div><Panel title="Attendance history" icon={<CheckCircle2 size={18}/>}><div>{attendanceHistory.slice(0,30).map(a=><div className="liveRow" key={a.id}><div><b>{a.status}</b><small>{formatDate(a.attendance_date)}{a.note ? ' • ' + a.note : ''}</small></div><strong>{['present','late'].includes(a.status.toLowerCase()) ? 'Present' : 'Absent'}</strong></div>)}{!attendanceHistory.length&&<Empty text="No attendance records published yet."/>}</div><button className="secondaryAction" onClick={()=>loadPortal(true)}>Refresh records <RefreshCw size={15}/></button></Panel></Page>}
 
         {active === 'Messages' && <Page title="Messages" eyebrow="SCHOOL COMMUNICATION"><div className="liveGrid"><Panel title="Conversation history" icon={<MessageCircle size={18}/>}><div>{messages.length?messages.map(m=><div className="messageItem" key={m.id}><b>{m.subject}</b><small>{formatDate(m.created_at)} • {m.read_at?'Read':'Unread'}</small><p>{m.body}</p></div>):<Empty text="No messages yet. Send the school a message below."/ >}</div></Panel><Panel title="Message the school" icon={<Send size={18}/>}><form className="messageForm" onSubmit={sendMessage}><input value={messageSubject} onChange={e=>setMessageSubject(e.target.value)} placeholder="Subject" required/><textarea value={messageBody} onChange={e=>setMessageBody(e.target.value)} placeholder="Write your message…" rows={6} required/><button className="authSubmit" disabled={sendingMessage}>{sendingMessage?'Sending…':'Send message'} <Send size={15}/></button>{messageStatus&&<small>{messageStatus}</small>}</form></Panel></div></Page>}
 
