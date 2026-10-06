@@ -23,7 +23,20 @@ button{font:inherit;border:0;cursor:pointer}.app{min-height:100vh;display:flex}.
 <h2>Admin sign in</h2><p>Secure access to the Mount Masaba school management console.</p>
 <label>Email</label><input id="adminEmail" type="email" autocomplete="username" required placeholder="admin@school.org"/>
 <label>Password</label><input id="adminPassword" type="password" autocomplete="current-password" required placeholder="••••••••"/>
-<button type="submit">Sign in to admin</button><div class="loginMsg" id="loginMsg"></div></form></div>
+<button type="submit">Sign in to admin</button><div class="loginMsg" id="loginMsg"></div>
+<div style="margin-top:18px;text-align:center;font-size:11px;color:#718096">Need an admin account?</div>
+<button type="button" id="showAdminRegister" style="margin-top:8px;background:#eef7ff;color:#1687d9">Register for admin approval</button>
+</form></div>
+<div class="loginGate" id="adminRegisterGate" style="display:none">
+<form class="loginCard" id="adminRegister">
+<img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba"/>
+<h2>Admin registration</h2><p>Register an account for administrator approval. Registration does <b>not</b> automatically grant admin access.</p>
+<label>Full name</label><input id="regName" type="text" required placeholder="Full name"/>
+<label>Email</label><input id="regEmail" type="email" required placeholder="admin@example.com"/>
+<label>Password</label><input id="regPassword" type="password" minlength="8" required placeholder="At least 8 characters"/>
+<button type="submit">Submit admin registration</button>
+<button type="button" id="backToAdminLogin" style="margin-top:8px;background:#eef3f8;color:#10233b">Back to sign in</button>
+<div class="loginMsg" id="regMsg"></div></form></div>
 <div class="app">
 <aside class="sidebar">
   <div class="brand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba"/><div><b>Mount Masaba</b><small>ADMIN CONSOLE</small></div></div>
@@ -98,7 +111,7 @@ const links=[...document.querySelectorAll('.nav a')];links.forEach(a=>a.addEvent
 <script>
 const SB_URL='https://bpxfyvxqciktrahaxkws.supabase.co',SB_KEY='sb_publishable_mW5V6o9vpzI9Z8sPcip01A_N6zNZWiL';
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-const gate=document.getElementById('loginGate'),loginMsg=document.getElementById('loginMsg'),dashboard=document.getElementById('dashboard'),studentView=document.querySelector('[data-view="students"]'),navLinks=[...document.querySelectorAll('.nav a')];
+const gate=document.getElementById('loginGate'),registerGate=document.getElementById('adminRegisterGate'),loginMsg=document.getElementById('loginMsg'),dashboard=document.getElementById('dashboard'),studentView=document.querySelector('[data-view="students"]'),navLinks=[...document.querySelectorAll('.nav a')];
 let studentRows=[];
 function showView(name){
 if(name==='students'){[...dashboard.children].forEach(x=>x.style.display=x===studentView?'block':'none');studentView.classList.add('active');loadStudents();}
@@ -112,5 +125,14 @@ async function initAdmin(){const {data:{session}}=await sb.auth.getSession();if(
 async function loadStudents(){const body=document.getElementById('studentsBody');body.innerHTML='<tr><td colspan="5" class="emptyState">Loading student records…</td></tr>';const {data,error}=await sb.from('students').select('id,admission_number,status,profiles:profile_id(full_name),classes:current_class_id(name,level),streams:current_stream_id(name)').order('admission_number');if(error){body.innerHTML='<tr><td colspan="5" class="emptyState">Could not load students: '+error.message+'</td></tr>';return;}studentRows=data||[];renderStudents();}
 function renderStudents(){const q=document.getElementById('studentSearch').value.toLowerCase().trim();const rows=studentRows.filter(s=>(s.profiles?.full_name||'').toLowerCase().includes(q)||(s.admission_number||'').toLowerCase().includes(q));const body=document.getElementById('studentsBody');if(!rows.length){body.innerHTML='<tr><td colspan="5" class="emptyState">No matching students found.</td></tr>';return;}body.innerHTML=rows.map(s=>{const name=s.profiles?.full_name||'Student',initials=name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();return '<tr><td><div class="studentCell"><div class="studentAvatar">'+initials+'</div><div><b>'+name+'</b><div style="font-size:10px;color:#718096">Learner account</div></div></div></td><td>'+(s.admission_number||'—')+'</td><td>'+(s.classes?.name||'—')+'</td><td>'+(s.streams?.name||'—')+'</td><td><span class="pill '+(s.status==='active'?'active':'')+'">'+(s.status||'unknown')+'</span></td></tr>'}).join('');}
 document.getElementById('studentSearch').addEventListener('input',renderStudents);document.getElementById('refreshStudents').addEventListener('click',loadStudents);initAdmin();
+
+document.getElementById('showAdminRegister').addEventListener('click',()=>{gate.style.display='none';registerGate.style.display='flex';});
+document.getElementById('backToAdminLogin').addEventListener('click',()=>{registerGate.style.display='none';gate.style.display='flex';});
+document.getElementById('adminRegister').addEventListener('submit',async e=>{
+e.preventDefault(); const msg=document.getElementById('regMsg'); msg.textContent='Creating registration…';
+const {data,error}=await sb.auth.signUp({email:document.getElementById('regEmail').value.trim(),password:document.getElementById('regPassword').value,options:{data:{full_name:document.getElementById('regName').value.trim()}}});
+if(error){msg.textContent=error.message;return;}
+msg.style.color='#13845a'; msg.textContent=data.session?'Account created. An existing admin must approve admin access.':'Registration submitted. Check your email if confirmation is required, then wait for an existing admin to approve your admin role.';
+});
 </script></body>
 </html>
