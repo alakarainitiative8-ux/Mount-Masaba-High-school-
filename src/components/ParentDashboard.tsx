@@ -87,6 +87,10 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
   const [messageBody, setMessageBody] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageStatus, setMessageStatus] = useState('');
+  const [assistantQuestion, setAssistantQuestion] = useState('');
+  const [assistantAnswer, setAssistantAnswer] = useState('');
+  const [assistantBusy, setAssistantBusy] = useState(false);
+  const [assistantError, setAssistantError] = useState('');
 
   const child = useMemo(() => children.find(c => c.id === childId) || children[0], [children, childId]);
 
@@ -280,6 +284,16 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
     return () => { supabase.removeChannel(channel); };
   }, [parentId, childId, loadPortal]);
 
+  async function askAssistant(e: React.FormEvent) {
+    e.preventDefault();
+    if (!assistantQuestion.trim() || !childId || assistantBusy) return;
+    setAssistantBusy(true); setAssistantError('');
+    const { data, error } = await supabase.functions.invoke('parent-assistant', { body: { question: assistantQuestion.trim(), student_id: childId } });
+    if (error || !data?.answer) setAssistantError('The assistant is temporarily unavailable.');
+    else { setAssistantAnswer(data.answer); setAssistantQuestion(''); }
+    setAssistantBusy(false);
+  }
+
   async function signIn(e: React.FormEvent) {
     e.preventDefault(); setLoggingIn(true); setLoginError('');
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail.trim(), password: loginPassword });
@@ -411,7 +425,7 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
           <section className="attentionCard"><div className="attentionIcon">✦</div><div><span className="eyebrow">PARENT VIEW</span><h3>{subjects.length ? 'Learning is connected.' : 'Learning data is getting ready.'}</h3><p>{subjects.length ? subjects.slice(0,3).map(s=>s.name + ' ' + s.score + '%').join(' • ') : 'Your child’s subject records will appear here once the school publishes them.'}</p></div><button onClick={()=>setActive('Results')}><ArrowRight size={18}/></button></section>
           <section className="parentSection"><div className="sectionTitle"><div><span className="eyebrow">ACADEMIC PULSE</span><h2>How learning is going</h2></div><button onClick={()=>setActive('Results')}>All subjects <ArrowRight size={15}/></button></div><div className="subjectList">{subjects.slice(0,5).map(s=><div className="subjectRow" key={s.id}><span className="subjectDot"/><div><b>{s.name}</b><small>{s.progress}% progress</small></div><strong>{s.score}%</strong><span className="trend">Live</span><div className="meter"><i style={{width:s.score+'%'}}/></div></div>)}{!subjects.length&&<div className="emptyInline">No subject results have been published yet.</div>}</div></section>
           <section className="parentSection splitSection"><div className="schoolCard"><div className="cardTop"><span className="eyebrow">SCHOOL</span><MessageCircle size={18}/></div><h3>{messages.length ? 'School messages' : 'Contact the school'}</h3><p>{messages.length ? messages[0].subject : 'Send a message to the school about your child.'}</p><button onClick={()=>setActive('Messages')}>Open messages <ArrowRight size={15}/></button></div><div className="schoolCard warm"><div className="cardTop"><span className="eyebrow">FEES</span><WalletCards size={18}/></div><h3>{outstanding ? money(outstanding, fees[0]?.currency||'UGX') : 'Account clear'}</h3><p>{outstanding ? 'Outstanding balance' : 'No outstanding balance recorded.'}</p><button onClick={()=>setActive('More')}>View fees <ArrowRight size={15}/></button></div></section>
-          <section className="parentAI"><div className="aiOrb"><Sparkles size={22}/></div><div><span className="eyebrow">PARENT ASSISTANT</span><h2>Understand your child’s progress.</h2><p>Use the school records here to see results, attendance, assignments and what needs attention.</p></div><button onClick={()=>setActive('Results')}>Explore <ArrowRight size={16}/></button></section>
+          <section className="parentAI"><div className="aiOrb"><Sparkles size={22}/></div><div className="parentAIContent"><span className="eyebrow">PARENT ASSISTANT</span><h2>Ask about your child’s progress.</h2><p>Answers are grounded in the school records you are authorized to see.</p><form className="assistantForm" onSubmit={askAssistant}><input value={assistantQuestion} onChange={e=>setAssistantQuestion(e.target.value)} placeholder="e.g. How is my child doing?" required/><button type="submit" disabled={assistantBusy}>{assistantBusy?'Thinking…':'Ask'} <Sparkles size={15}/></button></form>{assistantError&&<small className="assistantError">{assistantError}</small>}{assistantAnswer&&<div className="assistantAnswer">{assistantAnswer}</div>}</div></section>
           <section className="parentSection reassurance"><Heart size={18}/><div><b>You’re doing great as a parent.</b><p>The portal is here to make staying involved simple—not stressful.</p></div></section>
         </>}
 
