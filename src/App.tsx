@@ -190,7 +190,7 @@ function StudentDashboard({ onBack }) {
 }
 
 function App() { // Mount Masaba human school homepage
-  const [mode,setMode]=useState('home'),[portalRole,setPortalRole]=useState('student'),[level,setLevel]=useState('O-Level'),[selected,setSelected]=useState(0),[dbStatus,setDbStatus]=useState('checking'),[portalTab,setPortalTab]=useState('Dashboard'),[slide,setSlide]=useState(0);
+  const [mode,setMode]=useState('home'),[portalRole,setPortalRole]=useState('student'),[studentAuthed,setStudentAuthed]=useState(false),[level,setLevel]=useState('O-Level'),[selected,setSelected]=useState(0),[dbStatus,setDbStatus]=useState('checking'),[portalTab,setPortalTab]=useState('Dashboard'),[slide,setSlide]=useState(0);
   const [site,setSite]=useState({gallery:[],news:[],events:[],info:[],contacts:[]});
   const [menuOpen,setMenuOpen]=useState(false);
   const fallbackSlides=[{title:'Welcome to Mount Masaba',accent:'High School',kicker:'WELCOME TO MOUNT MASABA',text:'Knowledge, discipline and excellence — growing learners for a better future.'},{title:'Learn. Grow.',accent:'Lead.',kicker:'OUR SCHOOL COMMUNITY',text:'A caring coeducational learning community in Mbale, at the base of Mt. Elgon.'},{title:'School Life',accent:'Beyond the Classroom',kicker:'INTER-CLASS SPORTS & ACTIVITIES',text:'Learning, friendship, leadership and healthy competition across classes.'}];
@@ -258,7 +258,7 @@ function App() { // Mount Masaba human school homepage
       <section className="refFooter"><div className="refFooterBrand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba logo"/><b>Mount Masaba<br/>High School</b></div><div><b>Quick Links</b><a>Home</a><a>About Us</a><a>Academics</a><a>Admissions</a><a>News & Events</a><a>Gallery</a><a>Contact</a></div><div><b>Follow Us</b><p>● 𝕏 ▶ ◎</p></div><small>© 2026 Mount Masaba High School. All rights reserved.</small></section>
 
       <section className="refMobileMenu"><span>☰</span><b>Mobile menu</b><small>Home • About • Academics • Admissions • News • Gallery • Contact</small></section>
-    </>:portalRole==='parent'?<ParentDashboard onBack={()=>setMode('home')}/>:<StudentDashboard onBack={()=>setMode('home')}/>}
+    </>:portalRole==='parent'?<ParentDashboard onBack={()=>setMode('home')}/>:studentAuthed?<StudentDashboard onBack={()=>{setStudentAuthed(false);setMode('home')}}/>:<StudentAuth onBack={()=>setMode('home')} onAuthenticated={()=>setStudentAuthed(true)}/>}
     <footer><div><b>Mount Masaba High School</b><span>Striving for the Utmost</span></div><small>Mbale, Eastern Uganda • At the base of Mt. Elgon</small></footer>
   </main>;
 }
