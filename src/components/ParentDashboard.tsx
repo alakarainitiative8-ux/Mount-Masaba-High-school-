@@ -315,7 +315,7 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
         data: {
           full_name: registerName.trim(),
           phone: registerPhone.trim(),
-          student_id: registerStudentId.trim(),
+          student_full_name: registerStudentId.trim(),
           requested_role: 'parent'
         }
       }
@@ -376,7 +376,7 @@ export default function ParentDashboard({ onBack }: ParentDashboardProps) {
             <label>Full name<input value={registerName} onChange={e=>setRegisterName(e.target.value)} required autoComplete="name"/></label>
             <label>Parent email<input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required autoComplete="email"/></label>
             <label>Phone (optional)<input value={registerPhone} onChange={e=>setRegisterPhone(e.target.value)} autoComplete="tel"/></label>
-            <label>Student ID / Admission number<input value={registerStudentId} onChange={e=>setRegisterStudentId(e.target.value)} required placeholder="e.g. MMHS/001"/></label>
+            <label>Child's full name<input value={registerStudentId} onChange={e=>setRegisterStudentId(e.target.value)} required placeholder="e.g. MMHS/001"/></label>
             <label>Password<input type="password" value={registerPassword} onChange={e=>setRegisterPassword(e.target.value)} required minLength={8} autoComplete="new-password"/></label>
             {registerError && <div className="parentError">{registerError}</div>}
             <button className="authSubmit" disabled={loggingIn}>{loggingIn ? 'Creating account…' : 'Create account'} <ArrowRight size={16}/></button>
