@@ -11,8 +11,19 @@ button{font:inherit;border:0;cursor:pointer}.app{min-height:100vh;display:flex}.
 @media(max-width:850px){.sidebar{width:70px;padding:15px 8px}.brand div,.label,.nav span:not(.ico),.sideBottom span{display:none}.brand{justify-content:center;padding-bottom:20px}.brand img{width:40px}.nav a{justify-content:center}.main{margin-left:70px;width:calc(100% - 70px)}.top{padding:0 15px}.content{padding:18px}.grid{grid-template-columns:1fr 1fr}.section{grid-template-columns:1fr}.welcome{align-items:start;flex-direction:column}.date{display:none}}
 @media(max-width:520px){.grid{grid-template-columns:1fr}.welcome h1{font-size:24px}.top{height:62px}.status{display:none}.content{padding:14px}.card{padding:15px}}
 </style>
-</head>
+
+<style>
+.adminView{display:none}.adminView.active{display:block}
+.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:14px}.dataTable{width:100%;border-collapse:collapse;min-width:760px;background:#fff}.dataTable th,.dataTable td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--line);font-size:12px}.dataTable th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f8fbff}.studentCell{display:flex;align-items:center;gap:10px}.studentAvatar{width:34px;height:34px;border-radius:10px;background:var(--sky);display:grid;place-items:center;color:var(--blue);font-weight:800}.pill{display:inline-flex;padding:5px 9px;border-radius:20px;font-size:10px;font-weight:700;background:#eef3f8;color:#607086}.pill.active{background:#e8faf2;color:#13845a}.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap}.searchBox{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:9px 12px;min-width:280px}.searchBox input{border:0;outline:0;width:100%;font:inherit;font-size:12px}.toolbar button{background:var(--navy2);color:#fff;border-radius:10px;padding:10px 14px;font-size:12px}.emptyState{padding:35px;text-align:center;color:var(--muted);font-size:13px}
+.loginGate{position:fixed;inset:0;background:linear-gradient(135deg,#071b34,#0d4773);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}.loginGate.hidden{display:none}.loginCard{width:min(430px,100%);background:#fff;border-radius:22px;padding:30px;box-shadow:0 25px 80px rgba(0,0,0,.25)}.loginCard img{width:54px;height:54px;object-fit:contain;border-radius:14px;background:#f3f8fd}.loginCard h2{margin:18px 0 5px}.loginCard p{color:var(--muted);font-size:12px;margin:0 0 20px}.loginCard label{display:block;font-size:11px;font-weight:700;margin:13px 0 6px}.loginCard input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;outline:0}.loginCard button{width:100%;margin-top:17px;padding:12px;border-radius:10px;background:var(--navy2);color:#fff;font-weight:700}.loginMsg{font-size:11px;color:#b42318;margin-top:10px;min-height:16px}
+</style></head>
 <body>
+<div class="loginGate" id="loginGate"><form class="loginCard" id="adminLogin">
+<img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba"/>
+<h2>Admin sign in</h2><p>Secure access to the Mount Masaba school management console.</p>
+<label>Email</label><input id="adminEmail" type="email" autocomplete="username" required placeholder="admin@school.org"/>
+<label>Password</label><input id="adminPassword" type="password" autocomplete="current-password" required placeholder="••••••••"/>
+<button type="submit">Sign in to admin</button><div class="loginMsg" id="loginMsg"></div></form></div>
 <div class="app">
 <aside class="sidebar">
   <div class="brand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba"/><div><b>Mount Masaba</b><small>ADMIN CONSOLE</small></div></div>
@@ -70,12 +81,36 @@ button{font:inherit;border:0;cursor:pointer}.app{min-height:100vh;display:flex}.
     </div></article>
   </section>
   <div class="notice"><div><b>Next build step: secure admin authentication + Supabase management.</b><p>The interface is ready; the next layer will restrict this console to authorized school administrators.</p></div><button onclick="alert('Admin authentication is the next connection.')">Secure console →</button></div>
-</div>
+
+<section class="adminView" data-view="students">
+<div class="welcome"><div><span class="eyebrow">STUDENT MANAGEMENT</span><h1>Students</h1><p>Search learners, view class placement and account status.</p></div></div>
+<div class="card"><div class="toolbar"><div class="searchBox">⌕ <input id="studentSearch" placeholder="Search by name or admission number..."/></div><button id="refreshStudents">↻ Refresh</button></div>
+<div class="tableWrap"><table class="dataTable"><thead><tr><th>Student</th><th>Admission</th><th>Class</th><th>Stream</th><th>Status</th></tr></thead><tbody id="studentsBody"><tr><td colspan="5" class="emptyState">Loading student records…</td></tr></tbody></table></div></div>
+</section></div>
 </main>
 </div>
 <script>
 document.getElementById('date').textContent=new Intl.DateTimeFormat(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).format(new Date());
 const links=[...document.querySelectorAll('.nav a')];links.forEach(a=>a.addEventListener('click',()=>{links.forEach(x=>x.classList.remove('active'));a.classList.add('active')}));
 </script>
-</body>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://bpxfyvxqciktrahaxkws.supabase.co',SB_KEY='sb_publishable_mW5V6o9vpzI9Z8sPcip01A_N6zNZWiL';
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const gate=document.getElementById('loginGate'),loginMsg=document.getElementById('loginMsg'),dashboard=document.getElementById('dashboard'),studentView=document.querySelector('[data-view="students"]'),navLinks=[...document.querySelectorAll('.nav a')];
+let studentRows=[];
+function showView(name){
+if(name==='students'){[...dashboard.children].forEach(x=>x.style.display=x===studentView?'block':'none');studentView.classList.add('active');loadStudents();}
+else{[...dashboard.children].forEach(x=>x.style.display='');studentView.classList.remove('active');}
+navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+name));
+document.querySelector('.crumb b').textContent=name==='dashboard'?'Dashboard':name[0].toUpperCase()+name.slice(1);
+}
+navLinks.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showView(a.getAttribute('href').slice(1));}));
+document.getElementById('adminLogin').addEventListener('submit',async e=>{e.preventDefault();loginMsg.textContent='Signing in…';const {error}=await sb.auth.signInWithPassword({email:adminEmail.value.trim(),password:adminPassword.value});if(error){loginMsg.textContent=error.message;return;}gate.classList.add('hidden');});
+async function initAdmin(){const {data:{session}}=await sb.auth.getSession();if(session)gate.classList.add('hidden');}
+async function loadStudents(){const body=document.getElementById('studentsBody');body.innerHTML='<tr><td colspan="5" class="emptyState">Loading student records…</td></tr>';const {data,error}=await sb.from('students').select('id,admission_number,status,profiles:profile_id(full_name),classes:current_class_id(name,level),streams:current_stream_id(name)').order('admission_number');if(error){body.innerHTML='<tr><td colspan="5" class="emptyState">Could not load students: '+error.message+'</td></tr>';return;}studentRows=data||[];renderStudents();}
+function renderStudents(){const q=document.getElementById('studentSearch').value.toLowerCase().trim();const rows=studentRows.filter(s=>(s.profiles?.full_name||'').toLowerCase().includes(q)||(s.admission_number||'').toLowerCase().includes(q));const body=document.getElementById('studentsBody');if(!rows.length){body.innerHTML='<tr><td colspan="5" class="emptyState">No matching students found.</td></tr>';return;}body.innerHTML=rows.map(s=>{const name=s.profiles?.full_name||'Student',initials=name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();return '<tr><td><div class="studentCell"><div class="studentAvatar">'+initials+'</div><div><b>'+name+'</b><div style="font-size:10px;color:#718096">Learner account</div></div></div></td><td>'+(s.admission_number||'—')+'</td><td>'+(s.classes?.name||'—')+'</td><td>'+(s.streams?.name||'—')+'</td><td><span class="pill '+(s.status==='active'?'active':'')+'">'+(s.status||'unknown')+'</span></td></tr>'}).join('');}
+document.getElementById('studentSearch').addEventListener('input',renderStudents);document.getElementById('refreshStudents').addEventListener('click',loadStudents);initAdmin();
+</script></body>
 </html>
