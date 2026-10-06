@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, CalendarDays, CheckCircle2, CircleDollarSign, GraduationCap, Library, MessageCircle, Monitor, Newspaper, Search, Sparkles, Trophy, Users } from 'lucide-react';
 import VoiceTeacher from './components/VoiceTeacher';
 import ParentDashboard from './components/ParentDashboard';
+import { supabase } from './lib/supabase';
 
 const teachers = [
   ['Mathematics', 'O-Level + A-Level'],
@@ -37,8 +38,83 @@ function getStudentGreeting(hour = new Date().getHours()) {
   return 'Good evening';
 }
 
+function StudentAuth({ onBack, onAuthenticated }) {
+  const [view, setView] = useState('login');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [form, setForm] = useState({ email:'', password:'', fullName:'', admissionNumber:'', classId:'', level:'o_level' });
+  const [classes, setClasses] = useState([]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.from('classes').select('id,name,level,grade_number').order('sort_order').then(({data}) => setClasses(data || []));
+  }, []);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!supabase) return setMessage('Student services are temporarily unavailable.');
+    setLoading(true); setMessage('');
+    try {
+      if (view === 'login') {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: form.email.trim(), password: form.password });
+        if (error) throw error;
+        if (!data.user) throw new Error('Login could not be completed.');
+        onAuthenticated();
+      } else {
+        if (!form.fullName.trim() || !form.admissionNumber.trim() || !form.classId) throw new Error('Please complete your name, admission number and class.');
+        const { data, error } = await supabase.auth.signUp({
+          email: form.email.trim(),
+          password: form.password,
+          options: { data: { full_name: form.fullName.trim() } }
+        });
+        if (error) throw error;
+        if (!data.user) throw new Error('Registration could not be completed.');
+        const { error: studentError } = await supabase.from('students').insert({
+          profile_id: data.user.id,
+          admission_number: form.admissionNumber.trim(),
+          current_class_id: form.classId,
+          status: 'active'
+        });
+        if (studentError) throw studentError;
+        if (data.session) onAuthenticated();
+        else setMessage('Registration submitted. Check your email to confirm your account, then log in.');
+      }
+    } catch (err) {
+      setMessage(err?.message || 'Something went wrong. Please try again.');
+    } finally { setLoading(false); }
+  };
+
+  return <section className="studentAuth">
+    <div className="studentAuthCard">
+      <button className="studentAuthBack" onClick={onBack}>← School home</button>
+      <div className="studentAuthBrand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba"/><div><b>Mount Masaba</b><small>STUDENT PORTAL</small></div></div>
+      <span className="studentEyebrow">{view === 'login' ? 'WELCOME BACK' : 'JOIN YOUR SCHOOL SPACE'}</span>
+      <h1>{view === 'login' ? 'Sign in to your learning space.' : 'Create your student account.'}</h1>
+      <p>{view === 'login' ? 'Use your school email and password to continue.' : 'Your registration will be linked to your student record in Supabase.'}</p>
+      <form onSubmit={submit} className="studentAuthForm">
+        {view === 'register' && <><label>Full name<input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} placeholder="Your full name" required/></label><label>Admission number<input value={form.admissionNumber} onChange={e=>setForm({...form,admissionNumber:e.target.value})} placeholder="e.g. MMS/2026/001" required/></label><label>Level<select value={form.level} onChange={e=>setForm({...form,level:e.target.value})}><option value="o_level">O-Level</option><option value="a_level">A-Level</option></select></label><label>Class<select value={form.classId} onChange={e=>setForm({...form,classId:e.target.value})} required><option value="">Choose your class</option>{classes.filter(x=>x.level===form.level).map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label></>}
+        <label>Email<input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="you@example.com" autoComplete="email" required/></label>
+        <label>Password<input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="At least 6 characters" minLength="6" autoComplete={view==='login'?'current-password':'new-password'} required/></label>
+        {message && <div className="studentAuthMessage">{message}</div>}
+        <button className="studentAuthSubmit" disabled={loading}>{loading ? 'Please wait…' : view === 'login' ? 'Sign in' : 'Create account'}</button>
+      </form>
+      <button className="studentAuthSwitch" onClick={()=>{setView(view==='login'?'register':'login');setMessage('')}}>{view==='login' ? 'New student? Create an account' : 'Already registered? Sign in'}</button>
+    </div>
+  </section>;
+}
+
 function StudentDashboard({ onBack }) {
   const [active, setActive] = useState('Home');
+  const [student, setStudent] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  useEffect(() => { const t=window.setInterval(()=>setCurrentTime(new Date()),60000); return ()=>window.clearInterval(t); }, []);
+  useEffect(() => { (async()=>{ if(!supabase) return; const {data:{user}}=await supabase.auth.getUser(); if(!user){onBack();return;} const {data}=await supabase.from('students').select('id,admission_number,current_class_id,current_stream_id,status,profiles:profile_id(full_name,avatar_path),classes:current_class_id(name,level),streams:current_stream_id(name)').eq('profile_id',user.id).maybeSingle(); setStudent(data); setProfileLoading(false); })(); }, [onBack]);
+  const greeting = currentTime.getHours() >= 5 && currentTime.getHours() < 12 ? 'Good morning' : currentTime.getHours() >= 12 && currentTime.getHours() < 17 ? 'Good afternoon' : 'Good evening';
+  const studentName = student?.profiles?.full_name || 'Student';
+  const className = student?.classes?.name || 'Class pending';
+  const levelName = student?.classes?.level === 'a_level' ? 'A-Level' : student?.classes?.level === 'o_level' ? 'O-Level' : 'Level pending';
+  const streamName = student?.streams?.name || 'Stream pending';
   const [currentTime, setCurrentTime] = useState(() => new Date());
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentTime(new Date()), 60000);
@@ -75,8 +151,8 @@ function StudentDashboard({ onBack }) {
     </header>
     <main className="studentMain">
       <section className="studentWelcome">
-        <div><span className="studentEyebrow">MY LEARNING SPACE</span><h1>{greeting}, <strong>Student</strong> 👋</h1><p>This is your space. Learn at your pace, track your progress, and always know what comes next.</p></div>
-        <div className="studentIdentity"><div className="studentAvatarLarge">S</div><div><b>Student</b><span>Student ID ••••••</span><small>Personal dashboard</small></div><button onClick={()=>setActive('Profile')}>View profile</button></div>
+        <div><span className="studentEyebrow">MY LEARNING SPACE</span><h1>{greeting}, <strong>{studentName}</strong> 👋</h1><p>This is your space. Learn at your pace, track your progress, and always know what comes next.</p></div>
+        <div className="studentIdentity"><div className="studentAvatarLarge">S</div><div><b>{studentName}</b><span>{student?.admission_number || 'Student ID pending'}</span><small>{className} • {levelName} • {streamName}</small></div><button onClick={()=>setActive('Profile')}>View profile</button></div>
       </section>
 
       <section className="studentFocusCard">
