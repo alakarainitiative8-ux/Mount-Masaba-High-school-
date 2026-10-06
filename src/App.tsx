@@ -31,8 +31,20 @@ function SatelliteMap(){
   return <div className="satelliteMap"><img src={src} alt="Aerial view around Mount Masaba High School, Mbale" loading="lazy"/><span className="schoolMapPin">●</span><div className="schoolMapLabel">Mount Masaba High School</div></div>;
 }
 
+function getStudentGreeting(hour = new Date().getHours()) {
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 function StudentDashboard({ onBack }) {
   const [active, setActive] = useState('Home');
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const greeting = getStudentGreeting(currentTime.getHours());
   const nav = ['Home','Learning','AI Teachers','Tasks','Results','Profile'];
   const subjects = [
     ['Mathematics','Continue learning','—'],
@@ -63,7 +75,7 @@ function StudentDashboard({ onBack }) {
     </header>
     <main className="studentMain">
       <section className="studentWelcome">
-        <div><span className="studentEyebrow">MY LEARNING SPACE</span><h1>Welcome back, <strong>Student</strong> 👋</h1><p>This is your space. Learn at your pace, track your progress, and always know what comes next.</p></div>
+        <div><span className="studentEyebrow">MY LEARNING SPACE</span><h1>{greeting}, <strong>Student</strong> 👋</h1><p>This is your space. Learn at your pace, track your progress, and always know what comes next.</p></div>
         <div className="studentIdentity"><div className="studentAvatarLarge">S</div><div><b>Student</b><span>Student ID ••••••</span><small>Personal dashboard</small></div><button onClick={()=>setActive('Profile')}>View profile</button></div>
       </section>
 
