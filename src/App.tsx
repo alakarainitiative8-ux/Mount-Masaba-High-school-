@@ -31,6 +31,76 @@ function SatelliteMap(){
   return <div className="satelliteMap"><img src={src} alt="Aerial view around Mount Masaba High School, Mbale" loading="lazy"/><span className="schoolMapPin">●</span><div className="schoolMapLabel">Mount Masaba High School</div></div>;
 }
 
+function StudentDashboard({ onBack }) {
+  const [active, setActive] = useState('Home');
+  const nav = ['Home','Learning','AI Teachers','Tasks','Results','Profile'];
+  const subjects = [
+    ['Mathematics','Continue learning','—'],
+    ['English Language','Next lesson','—'],
+    ['Biology','Revision ready','—'],
+    ['Chemistry','Practice set','—']
+  ];
+  const actions = [
+    ['AI Teachers','Ask a subject teacher','Sparkles'],
+    ['My Learning','Continue your courses','BookOpen'],
+    ['Assignments','See what is due','CheckCircle2'],
+    ['Timetable','Know your next class','CalendarDays']
+  ];
+  if(active !== 'Home'){
+    const labels={Learning:'Your learning space', 'AI Teachers':'Your AI teacher room', Tasks:'Your tasks', Results:'Your academic record', Profile:'Your student profile'};
+    return <section className="studentPortal studentSubpage">
+      <header className="studentTopbar"><button className="studentBack" onClick={onBack}>← <span>School home</span></button><div className="studentSchoolMark"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt=""/><b>Mount Masaba</b></div><button className="studentIconBtn" onClick={()=>setActive('Home')}>⌂</button></header>
+      <div className="studentSubpageHero"><span className="studentEyebrow">STUDENT SPACE</span><h1>{labels[active]}</h1><p>Everything here is designed around you, your learning and your next step.</p></div>
+      <div className="studentPlaceholderGrid">{actions.map(([title,desc,icon])=><button key={title} onClick={()=>setActive(title==='AI Teachers'?'AI Teachers':title==='My Learning'?'Learning':title==='Assignments'?'Tasks':'Home')}><span className="studentActionIcon">{icon==='Sparkles'?'✦':icon==='BookOpen'?'▣':icon==='CheckCircle2'?'✓':'◷'}</span><b>{title}</b><small>{desc}</small><ArrowRight size={15}/></button>)}</div>
+      <div className="studentEmptyState"><span>✦</span><h3>Your {active.toLowerCase()} will live here</h3><p>When your student account is connected, this space will load your personal school data automatically.</p><button onClick={()=>setActive('Home')}>Back to my dashboard</button></div>
+    </section>;
+  }
+  return <section className="studentPortal">
+    <header className="studentTopbar">
+      <button className="studentBack" onClick={onBack}>← <span>School home</span></button>
+      <div className="studentSchoolMark"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba High School"/><b>Mount Masaba</b><small>HIGH SCHOOL</small></div>
+      <div className="studentTopActions"><button className="studentIconBtn" aria-label="Notifications">♢</button><button className="studentAvatar">S</button></div>
+    </header>
+    <main className="studentMain">
+      <section className="studentWelcome">
+        <div><span className="studentEyebrow">MY LEARNING SPACE</span><h1>Welcome back, <strong>Student</strong> 👋</h1><p>This is your space. Learn at your pace, track your progress, and always know what comes next.</p></div>
+        <div className="studentIdentity"><div className="studentAvatarLarge">S</div><div><b>Student</b><span>Student ID ••••••</span><small>Personal dashboard</small></div><button onClick={()=>setActive('Profile')}>View profile</button></div>
+      </section>
+
+      <section className="studentFocusCard">
+        <div className="studentFocusGlow"></div><div className="studentFocusCopy"><span className="studentEyebrow">YOUR NEXT STEP</span><h2>Keep your learning moving.</h2><p>Pick up where you stopped, ask your AI teacher for help, or check today's school plan.</p><button onClick={()=>setActive('Learning')}>Continue learning <ArrowRight size={16}/></button></div>
+        <div className="studentProgressRing"><div><b>—</b><span>progress</span></div></div>
+      </section>
+
+      <section className="studentStats">
+        <article><span>LEARNING STREAK</span><b>—</b><small>Start your streak today</small></article>
+        <article><span>ASSIGNMENTS</span><b>—</b><small>Your due work will appear here</small></article>
+        <article><span>ATTENDANCE</span><b>—</b><small>Waiting for your school record</small></article>
+        <article><span>ACADEMIC SCORE</span><b>—</b><small>Your latest results will appear here</small></article>
+      </section>
+
+      <section className="studentSectionHead"><div><span className="studentEyebrow">QUICK ACCESS</span><h2>What do you want to do?</h2></div><span className="studentPersonalBadge">Made for you</span></section>
+      <section className="studentActions">{actions.map(([title,desc,icon])=><button key={title} onClick={()=>setActive(title==='AI Teachers'?'AI Teachers':title==='My Learning'?'Learning':title==='Assignments'?'Tasks':'Learning')}><span className="studentActionIcon">{icon==='Sparkles'?'✦':icon==='BookOpen'?'▣':icon==='CheckCircle2'?'✓':'◷'}</span><div><b>{title}</b><small>{desc}</small></div><ArrowRight size={16}/></button>)}</section>
+
+      <section className="studentTwoCol">
+        <div className="studentPanel">
+          <div className="studentPanelHead"><div><span className="studentEyebrow">MY SUBJECTS</span><h2>Your learning shelf</h2></div><button onClick={()=>setActive('Learning')}>View all</button></div>
+          <div className="studentSubjectList">{subjects.map(([name,status,score])=><button key={name} onClick={()=>setActive('Learning')}><span className="studentSubjectIcon">{name[0]}</span><div><b>{name}</b><small>{status}</small></div><strong>{score}</strong><ArrowRight size={14}/></button>)}</div>
+        </div>
+        <div className="studentPanel studentAiFeature">
+          <span className="studentAiOrb">✦</span><span className="studentEyebrow">YOUR AI TEACHERS</span><h2>Never get stuck alone.</h2><p>Ask a subject-specific AI teacher to explain a topic, walk you through a question, or create practice for you.</p><div className="studentTeacherPills"><span>Math</span><span>Physics</span><span>Biology</span><span>+ 15 more</span></div><button onClick={()=>setActive('AI Teachers')}>Meet my AI teachers <ArrowRight size={16}/></button>
+        </div>
+      </section>
+
+      <section className="studentTwoCol studentLower">
+        <div className="studentPanel"><div className="studentPanelHead"><div><span className="studentEyebrow">TODAY</span><h2>Your school day</h2></div><button onClick={()=>setActive('Learning')}>Timetable</button></div><div className="studentTimeline"><div><b>08:00</b><span><strong>Mathematics</strong><small>Classroom • Learning</small></span><em>Next</em></div><div><b>10:00</b><span><strong>English Language</strong><small>Classroom • Learning</small></span><em>Later</em></div><div><b>14:00</b><span><strong>Inter-Class Activity</strong><small>School field • Activity</small></span><em>Today</em></div></div></div>
+        <div className="studentPanel studentMotivation"><span>YOUR SPACE • YOUR PACE</span><h2>Small progress every day becomes something big.</h2><p>Show up. Ask questions. Practice. Improve.</p><button onClick={()=>setActive('Learning')}>Start a learning session <ArrowRight size={15}/></button></div>
+      </section>
+    </main>
+    <nav className="studentMobileNav">{nav.map(x=><button key={x} className={active===x?'active':''} onClick={()=>setActive(x)}><span>{x==='Home'?'⌂':x==='Learning'?'▣':x==='AI Teachers'?'✦':x==='Tasks'?'✓':x==='Results'?'◒':'○'}</span><small>{x}</small></button>)}</nav>
+  </section>;
+}
+
 function App() { // Mount Masaba human school homepage
   const [mode,setMode]=useState('home'),[portalRole,setPortalRole]=useState('student'),[level,setLevel]=useState('O-Level'),[selected,setSelected]=useState(0),[dbStatus,setDbStatus]=useState('checking'),[portalTab,setPortalTab]=useState('Dashboard'),[slide,setSlide]=useState(0);
   const [site,setSite]=useState({gallery:[],news:[],events:[],info:[],contacts:[]});
@@ -100,7 +170,7 @@ function App() { // Mount Masaba human school homepage
       <section className="refFooter"><div className="refFooterBrand"><img src="https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/public-school-logo" alt="Mount Masaba logo"/><b>Mount Masaba<br/>High School</b></div><div><b>Quick Links</b><a>Home</a><a>About Us</a><a>Academics</a><a>Admissions</a><a>News & Events</a><a>Gallery</a><a>Contact</a></div><div><b>Follow Us</b><p>● 𝕏 ▶ ◎</p></div><small>© 2026 Mount Masaba High School. All rights reserved.</small></section>
 
       <section className="refMobileMenu"><span>☰</span><b>Mobile menu</b><small>Home • About • Academics • Admissions • News • Gallery • Contact</small></section>
-    </>:portalRole==='parent'?<ParentDashboard onBack={()=>setMode('home')}/>:<section className="portal"><div className="portalTopLine"><div><span className="pill">{portalRole==='student'?'Student Portal':'Parent Portal'}</span><h2>{portalRole==='student'?'Welcome back':'Welcome to your family dashboard'}</h2><p>{portalRole==='student'?'Learning, results, attendance and AI support in one place.':'Stay connected with your child’s learning, attendance, results, fees and school notices.'}</p></div><div className="portalRoleSwitch"><button className={portalRole==='student'?'active':''} onClick={()=>{setPortalRole('student');setPortalTab('Dashboard')}}>Student</button><button className={portalRole==='parent'?'active':''} onClick={()=>{setPortalRole('parent');setPortalTab('Dashboard')}}>Parent</button></div></div><div className="portalLayout"><aside className="portalSide"><div className="portalSideBrand"><span>{portalRole==='student'?'ST':'PA'}</span><div><b>{portalRole==='student'?'Learner space':'Family space'}</b><small>Mount Masaba High School</small></div></div><nav>{(portalRole==='student'?['Dashboard','My Learning','AI Teachers','Assignments','Quizzes','Results','Attendance','Timetable','Materials','Announcements']:['Dashboard','My Children','Results','Attendance','Fees','Timetable','Announcements','Messages']).map(x=><button key={x} className={portalTab===x?'active':''} onClick={()=>setPortalTab(x)}>{x}</button>)}</nav></aside><div className="portalMain"><div className="portalSearch"><Search size={15}/><span>Search your portal</span></div>{portalTab==='Dashboard'?<><div className="portalStats">{(portalRole==='student'?[['Attendance','92%','Good standing'],['Assignments','4','Due this week'],['Results','68%','Current average'],['AI Teachers','18','Subjects available']]:[['Children','1','Linked learner'],['Attendance','92%','Latest record'],['Results','68%','Current average'],['Fees','View','Account balance']]).map(([a,b,d])=><div className="portalStat" key={a}><span>{a}</span><b>{b}</b><small>{d}</small></div>)}</div><div className="portalGrid"><div className="portalCard"><div className="portalCardHead"><div><span>QUICK ACTIONS</span><h3>{portalRole==='student'?'Today at school':'Family services'}</h3></div></div><div className="portalActions">{(portalRole==='student'?['My Learning','AI Teachers','Assignments','Results','Attendance','Timetable']:['My Children','Results','Attendance','Fees','Timetable','Messages']).map(x=><button key={x} onClick={()=>setPortalTab(x)}>{x}<ArrowRight size={14}/></button>)}</div></div><div className="portalCard"><div className="portalCardHead"><div><span>UPDATES</span><h3>School notices</h3></div><Newspaper size={18}/></div><div className="portalNotice"><b>Published school updates</b><small>Announcements from the school administration appear here.</small></div><div className="portalNotice"><b>Events & activities</b><small>Keep up with the school calendar and school life.</small></div></div></div><div className="portalGrid"><div className="portalCard"><div className="portalCardHead"><div><span>MY DAY</span><h3>School schedule</h3></div><CalendarDays size={18}/></div><div className="portalSchedule"><div><b>08:00</b><span>Mathematics<br/><small>{level} • Classroom</small></span><em>Now</em></div><div><b>10:00</b><span>English Language<br/><small>Learning session</small></span><em>Next</em></div><div><b>14:00</b><span>Inter-Class Sports<br/><small>School field • Activity</small></span><em>Today</em></div></div></div><div className="portalCard"><div className="portalCardHead"><div><span>CURRICULUM</span><h3>{level}</h3></div><div className="levelSwitch compact"><button className={level==='O-Level'?'active':''} onClick={()=>setLevel('O-Level')}>O</button><button className={level==='A-Level'?'active':''} onClick={()=>setLevel('A-Level')}>A</button></div></div><p className="portalText">Your curriculum, school records and learning support follow your level.</p></div></div></>:portalTab==='AI Teachers'?<div className="portalCard"><div className="portalCardHead"><div><span>AI LEARNING</span><h3>18 curriculum-aware AI teachers</h3><p>Choose a subject teacher for guided learning and practice.</p></div><Sparkles size={19}/></div><div className="teacherGrid">{visible.map(([name,scope],i)=><button key={name} className={selected===i?'teacher selected':'teacher'} onClick={()=>setSelected(i)}><span className="teacherIcon">AI</span><span><strong>{name}</strong><small>{scope}</small></span></button>)}</div><div className="aiPanel"><b>{visible[selected]?.[0]||'Choose a teacher'}</b><span>{level} curriculum support will appear here.</span></div></div>:<div className="portalCard featureCard"><span className="pill">{portalTab}</span><h3>{portalTab}</h3><p>Secure {portalRole==='student'?'student':'parent'} data from Supabase will appear here after account sign-in.</p><div className="featureRows"><div><CheckCircle2 size={17}/><span>School records</span></div><div><BookOpen size={17}/><span>Latest learning information</span></div><div><MessageCircle size={17}/><span>School communication</span></div></div></div>}</div></div></section>}
+    </>:portalRole==='parent'?<ParentDashboard onBack={()=>setMode('home')}/>:<StudentDashboard onBack={()=>setMode('home')}/>}
     <footer><div><b>Mount Masaba High School</b><span>Striving for the Utmost</span></div><small>Mbale, Eastern Uganda • At the base of Mt. Elgon</small></footer>
   </main>;
 }
