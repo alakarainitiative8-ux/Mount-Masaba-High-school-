@@ -1,0 +1,2 @@
+// Mount Masaba AI Import Center
+window.MountMasabaAIImport={version:1,endpoint:'https://bpxfyvxqciktrahaxkws.supabase.co/functions/v1/admin-ai-import',types:['timetable','attendance','students','teachers','results','fees','classes','subjects','parents','school_content','general']};
