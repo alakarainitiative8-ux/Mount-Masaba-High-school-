@@ -175,4 +175,50 @@ async function createSubjectVoice(p){const r=await sb.from('subjects').insert({c
 async function createNewsVoice(p){const r=await sb.from('news').insert({title:p.title,slug:p.slug||String(p.title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),body:p.body||'',status:'draft'});if(r.error)throw r.error;loadContent();speak('The news draft was saved.')}
 function start(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){q('voiceStatus').textContent='Voice input is not supported in this browser. Use Chrome on a secure connection.';return}if(rec)return;rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=false;rec.onstart=()=>{q('voiceStatus').textContent='Listening…';q('voiceText').textContent='';};rec.onresult=e=>{let final='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript;}if(final){q('voiceText').textContent=final;route(final).catch(x=>{q('voiceStatus').textContent=x.message;speak('Sorry, I could not complete that request.');});}};rec.onerror=e=>q('voiceStatus').textContent='Voice error: '+e.error;rec.onend=()=>{rec=null;if(q('voiceStatus').textContent==='Listening…')q('voiceStatus').textContent='Ready.'};rec.start()}
 q('voiceStart').onclick=start;q('voiceStop').onclick=()=>{rec?.stop();rec=null};q('voiceCancelBtn').onclick=()=>{pending=null;q('voiceConfirm').style.display='none';speak('Cancelled.')};q('voiceConfirmBtn').onclick=async()=>{if(!pending)return;const c=pending;pending=null;q('voiceConfirm').style.display='none';try{await execute(c)}catch(e){q('voiceStatus').textContent=e.message;speak('I could not complete the action.')}};})();
+</script><script>
+(function(){
+  function by(id){return document.getElementById(id)}
+  function timeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('Request timed out. Please check your internet connection.'))},ms)})])}
+  function message(id,text){var el=by(id);if(el)el.textContent=text}
+  var authClient=window._mountMasabaAuthClient||(window._mountMasabaAuthClient=window.supabase.createClient('https://bpxfyvxqciktrahaxkws.supabase.co','sb_publishable_mW5V6o9vpzI9Z8sPcip01A_N6zNZWiL'));
+  by('registerBtn').onclick=function(){
+    by('loginPanel').style.display='none';by('registerPanel').style.display='block';message('regMsg','');
+  };
+  by('backBtn').onclick=function(){
+    by('registerPanel').style.display='none';by('loginPanel').style.display='block';message('msg','');
+  };
+  by('login').onsubmit=async function(e){
+    e.preventDefault();var b=e.submitter||by('login').querySelector('button');b.disabled=true;message('msg','Signing in…');
+    try{
+      var r=await timeout(authClient.auth.signInWithPassword({email:by('email').value.trim(),password:by('password').value}),15000);
+      if(r.error)throw r.error;
+      var s=await timeout(authClient.auth.getSession(),15000),session=s.data&&s.data.session;
+      if(!session)throw new Error('Login did not create a session.');
+      var p=await timeout(authClient.from('profiles').select('role,is_active').eq('id',session.user.id).maybeSingle(),15000);
+      if(p.error)throw p.error;
+      if(p.data&&p.data.role==='admin'&&p.data.is_active!==false){
+        by('gate').style.display='none';by('app').style.display='flex';if(typeof loadDashboard==='function')loadDashboard();
+      }else{
+        await authClient.auth.signOut();throw new Error('Login succeeded, but this account is not an active administrator.');
+      }
+    }catch(err){message('msg',err.message||'Login failed.');}
+    finally{b.disabled=false;}
+  };
+  by('registerForm').onsubmit=async function(e){
+    e.preventDefault();var b=by('regSubmit');b.disabled=true;message('regMsg','Creating account…');
+    try{
+      var name=by('regName').value.trim(),email=by('regEmail').value.trim(),password=by('regPassword').value;
+      if(!name)throw new Error('Enter your full name.');
+      if(password.length<8)throw new Error('Password must be at least 8 characters.');
+      var r=await timeout(authClient.auth.signUp({email:email,password:password,options:{data:{full_name:name}}}),15000);
+      if(r.error)throw r.error;
+      if(r.data&&r.data.session){
+        var boot=await timeout(authClient.rpc('bootstrap_first_admin'),15000);if(boot.error)throw boot.error;
+        message('regMsg','Administrator created. Opening console…');
+        by('gate').style.display='none';by('app').style.display='flex';if(typeof loadDashboard==='function')loadDashboard();
+      }else message('regMsg','Account created. Check your email to confirm it, then sign in.');
+    }catch(err){message('regMsg',err.message||'Registration failed.');}
+    finally{b.disabled=false;}
+  };
+})();
 </script></body></html>
