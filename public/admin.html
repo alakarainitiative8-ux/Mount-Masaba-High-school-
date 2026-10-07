@@ -46,12 +46,89 @@
 </section><section id="voice" class="view"><h1>🎙️ Admin Voice Assistant</h1><div class="card"><h3>Talk to your school assistant</h3><p>Press the microphone, speak naturally, and the assistant will understand the request and take you to the right operation. The administrator can speak commands directly; if required information is missing, the assistant will ask for it.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="voiceStart">🎙️ Start talking</button><button type="button" id="voiceStop" class="secondary">Stop</button></div><div id="voiceStatus" style="margin:10px 0">Ready.</div><div style="background:#f4f7fb;border-radius:12px;padding:12px"><b>You said:</b><div id="voiceText">—</div><b>Assistant:</b><div id="voiceReply">—</div></div><div id="voiceConfirm" style="display:none;margin-top:12px"><button type="button" id="voiceConfirmBtn">✓ Confirm action</button><button type="button" id="voiceCancelBtn" class="secondary">Cancel</button></div></div></section><section id="settings" class="view"><h1>Settings</h1><div class="card">Secure administrator session and Mount Masaba database connection.</div></section><section id="aiimport" class="view"><h2>🧠 AI Import Center</h2><div class="card"><h3>Scan anything. Let AI structure it.</h3><p>Teacher/admin device only — students do not need phones.</p><select id="aiType"><option value="timetable">Timetable</option><option value="attendance">Attendance</option><option value="students">Students</option><option value="teachers">Teachers</option><option value="results">Results</option><option value="fees">Fees</option><option value="classes">Classes & streams</option><option value="subjects">Subjects</option><option value="parents">Parents</option><option value="school_content">School content</option></select><input id="aiFile" type="file" accept="image/*,.pdf,.txt,.csv"><button id="aiScan">📷 Scan & Ask AI</button><textarea id="aiText" rows="6" placeholder="Or paste/type the information here…"></textarea><div id="aiStatus"></div></div><div class="card"><h3>🔎 AI Review</h3><div id="aiReview" style="overflow:auto;max-height:460px">Nothing waiting.</div><div id="aiActions" style="display:none;gap:8px;flex-wrap:wrap"><button id="aiApprove">✓ Approve & stage</button><button id="aiFix">✎ Review uncertain records</button></div></div></section></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
 const sb=supabase.createClient('https://bpxfyvxqciktrahaxkws.supabase.co','sb_publishable_mW5V6o9vpzI9Z8sPcip01A_N6zNZWiL');const $=x=>document.getElementById(x);const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function checkAdmin(){const {data:{session}}=await sb.auth.getSession();if(!session)return false;let {data:p}=await sb.from('profiles').select('role,is_active,full_name').eq('id',session.user.id).single();if(p?.role!=='admin'&&p?.is_active!==false)return false;if(p?.role!=='admin'){const b=await sb.rpc('bootstrap_first_admin');if(!b.error){const q=await sb.from('profiles').select('role,is_active,full_name').eq('id',session.user.id).single();p=q.data}}return p?.role==='admin'&&p.is_active!==false?p:false}
-async function openApp(){const p=await checkAdmin();if(p){$('gate').style.display='none';$('app').style.display='flex';loadDashboard()}}
-$('login').onsubmit=async e=>{e.preventDefault();$('msg').textContent='Signing in…';const r=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(r.error){$('msg').textContent=r.error.message;return}const p=await checkAdmin();if(p){$('msg').textContent='';openApp()}else{await sb.auth.signOut();$('msg').textContent='This account is not an administrator.'}};
-$('registerBtn').onclick=()=>{$('loginPanel').style.display='none';$('registerPanel').style.display='block';$('regMsg').textContent=''};
-$('backBtn').onclick=()=>{$('registerPanel').style.display='none';$('loginPanel').style.display='block';$('msg').textContent=''};
-$('registerForm').onsubmit=async e=>{e.preventDefault();const btn=$('regSubmit');$('regMsg').textContent='Creating account…';btn.disabled=true;try{const name=$('regName').value.trim(),email=$('regEmail').value.trim(),password=$('regPassword').value;if(password.length<8){$('regMsg').textContent='Password must be at least 8 characters.';return}const r=await sb.auth.signUp({email,password,options:{data:{full_name:name}}});if(r.error){$('regMsg').textContent=r.error.message;return}if(r.data.session){const b=await sb.rpc('bootstrap_first_admin');if(b.error){$('regMsg').textContent=b.error.message;return}$('regMsg').textContent='You are the first administrator. Opening console…';setTimeout(openApp,500)}else{$('regMsg').textContent='Account created. Email confirmation is enabled in Supabase, so disable email confirmation once in Supabase Auth settings, then this account will open directly.'}}catch(err){$('regMsg').textContent=err.message||'Registration failed.'}finally{btn.disabled=false}};
+async function withTimeout(promise,ms=15000){return await Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Request timed out. Check your internet connection.')),ms))])}
+async function checkAdmin(){
+  const sessionResult=await withTimeout(sb.auth.getSession());
+  if(sessionResult.error) throw sessionResult.error;
+  const session=sessionResult.data?.session;
+  if(!session) return false;
+  let profileResult=await withTimeout(sb.from('profiles').select('role,is_active,full_name').eq('id',session.user.id).maybeSingle());
+  if(profileResult.error) throw profileResult.error;
+  let p=profileResult.data;
+  if(p?.role==='admin' && p.is_active!==false) return p;
+  if(p?.role==='pending' || !p){
+    const boot=await withTimeout(sb.rpc('bootstrap_first_admin'));
+    if(!boot.error){
+      profileResult=await withTimeout(sb.from('profiles').select('role,is_active,full_name').eq('id',session.user.id).maybeSingle());
+      if(!profileResult.error) p=profileResult.data;
+    }
+  }
+  return p?.role==='admin' && p.is_active!==false ? p : false;
+}
+async function openApp(){
+  try{
+    const p=await checkAdmin();
+    if(p){
+      $('gate').style.display='none';
+      $('app').style.display='flex';
+      await loadDashboard();
+    }
+  }catch(err){ $('msg').textContent=err.message||'Could not open admin console.'; }
+}
+$('login').onsubmit=async e=>{
+  e.preventDefault();
+  const btn=e.submitter||$('login').querySelector('button[type="submit"]')||$('login').querySelector('button');
+  btn.disabled=true; $('msg').textContent='Signing in…';
+  try{
+    const email=$('email').value.trim();
+    const password=$('password').value;
+    if(!email||!password) throw new Error('Enter your admin email and password.');
+    const r=await withTimeout(sb.auth.signInWithPassword({email,password}));
+    if(r.error) throw r.error;
+    const p=await checkAdmin();
+    if(!p){
+      await sb.auth.signOut();
+      throw new Error('Login succeeded, but this account is not an active administrator.');
+    }
+    $('msg').textContent='';
+    await openApp();
+  }catch(err){ $('msg').textContent=err.message||'Login failed.'; }
+  finally{btn.disabled=false;}
+};
+$('registerBtn').onclick=()=>{
+  $('loginPanel').style.display='none';
+  $('registerPanel').style.display='block';
+  $('regMsg').textContent='';
+};
+$('backBtn').onclick=()=>{
+  $('registerPanel').style.display='none';
+  $('loginPanel').style.display='block';
+  $('msg').textContent='';
+};
+$('registerForm').onsubmit=async e=>{
+  e.preventDefault();
+  const btn=$('regSubmit');
+  btn.disabled=true; $('regMsg').textContent='Creating account…';
+  try{
+    const name=$('regName').value.trim();
+    const email=$('regEmail').value.trim();
+    const password=$('regPassword').value;
+    if(!name) throw new Error('Enter your full name.');
+    if(!email) throw new Error('Enter your email.');
+    if(password.length<8) throw new Error('Password must be at least 8 characters.');
+    const r=await withTimeout(sb.auth.signUp({email,password,options:{data:{full_name:name}}}));
+    if(r.error) throw r.error;
+    if(r.data?.session){
+      const boot=await withTimeout(sb.rpc('bootstrap_first_admin'));
+      if(boot.error) throw boot.error;
+      $('regMsg').textContent='Administrator created. Opening console…';
+      await openApp();
+    }else{
+      $('regMsg').textContent='Account created. Check your email to confirm it, then return here and sign in.';
+    }
+  }catch(err){ $('regMsg').textContent=err.message||'Registration failed.'; }
+  finally{btn.disabled=false;}
+};
 function nav(){document.querySelectorAll('.side a[href^="#"]').forEach(a=>a.onclick=e=>{e.preventDefault();const id=a.getAttribute('href').slice(1);if(!id)return;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));loaders[id]?.()})}
 async function cnt(t,filter){let q=sb.from(t).select('id',{count:'exact',head:true});if(filter)q=filter(q);const r=await q;return r.error?0:(r.count||0)}async function loadDashboard(){const [s,t,p,a,c,sub,pp,fees]=await Promise.all([cnt('students'),cnt('teachers'),cnt('parents'),cnt('ai_teachers'),cnt('classes'),cnt('subjects'),cnt('parent_registration_requests',q=>q.eq('status','pending')),sb.from('fee_accounts').select('total_amount,amount_paid')]);$('studentsCount').textContent=s;$('teachersCount').textContent=t;$('parentsCount').textContent=p;$('aiCount').textContent=a;$('classesCount').textContent=c;$('subjectsCount').textContent=sub;$('pendingParentsCount').textContent=pp;const outstanding=(fees.data||[]).reduce((n,x)=>n+Math.max(0,Number(x.total_amount||0)-Number(x.amount_paid||0)),0);$('outstandingCount').textContent='UGX '+outstanding.toLocaleString();$('dashStatus').textContent='Live data from Mount Masaba database • Updated '+new Date().toLocaleTimeString()}
 async function loadStudents(){const r=await sb.from('students').select('admission_number,profile_id,current_class_id,status').order('admission_number');$('studentsBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.admission_number)+'</td><td>'+esc(x.profile_id)+'</td><td>'+esc(x.current_class_id||'—')+'</td><td>'+esc(x.status)+'</td></tr>').join('')||'<tr><td>No students</td></tr>'}async function loadTeachers(){const r=await sb.from('teachers').select('profile_id,staff_number,department,is_active');$('teachersBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.profile_id)+'</td><td>'+esc(x.staff_number)+'</td><td>'+esc(x.department)+'</td><td>'+esc(x.is_active)+'</td></tr>').join('')||'<tr><td>No teachers</td></tr>'}async function loadParents(){const r=await sb.from('parents').select('profile_id,occupation');$('parentsBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.profile_id)+'</td><td>'+esc(x.occupation)+'</td></tr>').join('')||'<tr><td>No parents</td></tr>'}async function loadParentRequests(){const r=await sb.from('parent_registration_requests').select('id,student_admission_number,student_full_name,relationship,status').eq('status','pending').order('created_at',{ascending:false});if(r.error){$('parentRequestsBody').textContent=r.error.message;return}$('parentRequestsBody').innerHTML=(r.data||[]).map(x=>'<div class="card" style="margin:8px 0"><b>'+esc(x.student_full_name||'Student')+'</b> — '+esc(x.student_admission_number||'')+'<br>'+esc(x.relationship||'')+'<br><button type="button" onclick="approveParent(\''+x.id+'\')">✓ Approve</button> <button type="button" class="secondary" onclick="rejectParent(\''+x.id+'\')">Reject</button></div>').join('')||'<p>No pending parent registrations.</p>'} async function approveParent(id){const r=await sb.rpc('approve_parent_registration',{request_id:id});if(r.error){$('parentRequestsMsg').textContent=r.error.message;return}$('parentRequestsMsg').textContent='Parent approved.';loadParentRequests();loadParents();loadDashboard()} async function rejectParent(id){const r=await sb.from('parent_registration_requests').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id);if(r.error){$('parentRequestsMsg').textContent=r.error.message;return}$('parentRequestsMsg').textContent='Parent request rejected.';loadParentRequests();loadDashboard()} async function loadClasses(){const r=await sb.from('classes').select('id,level,name,grade_number').order('sort_order');$('classesBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.level)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.grade_number)+'</td><td><button type="button" onclick="deleteClass(\''+x.id+'\')">Delete</button></td></tr>').join('')||'<tr><td>No classes</td></tr>'}
