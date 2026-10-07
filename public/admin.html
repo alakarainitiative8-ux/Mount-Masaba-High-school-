@@ -130,7 +130,12 @@ $('registerForm').onsubmit=async e=>{
   finally{btn.disabled=false;}
 };
 function nav(){document.querySelectorAll('.side a[href^="#"]').forEach(a=>a.onclick=e=>{e.preventDefault();const id=a.getAttribute('href').slice(1);if(!id)return;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));loaders[id]?.()})}
-async function cnt(t,filter){let q=sb.from(t).select('id',{count:'exact',head:true});if(filter)q=filter(q);const r=await q;return r.error?0:(r.count||0)}async function loadDashboard(){const [s,t,p,a,c,sub,pp,fees]=await Promise.all([cnt('students'),cnt('teachers'),cnt('parents'),cnt('ai_teachers'),cnt('classes'),cnt('subjects'),cnt('parent_registration_requests',q=>q.eq('status','pending')),sb.from('fee_accounts').select('total_amount,amount_paid')]);$('studentsCount').textContent=s;$('teachersCount').textContent=t;$('parentsCount').textContent=p;$('aiCount').textContent=a;$('classesCount').textContent=c;$('subjectsCount').textContent=sub;$('pendingParentsCount').textContent=pp;const outstanding=(fees.data||[]).reduce((n,x)=>n+Math.max(0,Number(x.total_amount||0)-Number(x.amount_paid||0)),0);$('outstandingCount').textContent='UGX '+outstanding.toLocaleString();$('dashStatus').textContent='Live data from Mount Masaba database • Updated '+new Date().toLocaleTimeString()}
+async function cnt(t,filter){let q=sb.from(t).select('id',{count:'exact',head:true});if(filter)q=filter(q);try{const r=await withTimeout(q,12000);return r.error?0:(r.count||0)}catch(_){return 0}}
+async function loadDashboard(){
+  $('dashStatus').textContent='Loading school data…';
+  const [s,t,p,a,c,sub,pp,fees]=await Promise.all([cnt('students'),cnt('teachers'),cnt('parents'),cnt('ai_teachers'),cnt('classes'),cnt('subjects'),cnt('parent_registration_requests',q=>q.eq('status','pending')),(async()=>{try{const r=await withTimeout(sb.from('fee_accounts').select('total_amount,amount_paid'),12000);return r.error?{data:[]}:r}catch(_){return {data:[]}}})()]);
+  $('studentsCount').textContent=s;$('teachersCount').textContent=t;$('parentsCount').textContent=p;$('aiCount').textContent=a;$('classesCount').textContent=c;$('subjectsCount').textContent=sub;$('pendingParentsCount').textContent=pp;
+  const outstanding=(fees.data||[]).reduce((n,x)=>n+Math.max(0,Number(x.total_amount||0)-Number(x.amount_paid||0)),0);$('outstandingCount').textContent='UGX '+outstanding.toLocaleString();$('dashStatus').textContent='Live data from Mount Masaba database • Updated '+new Date().toLocaleTimeString();}
 async function loadStudents(){const r=await sb.from('students').select('admission_number,profile_id,current_class_id,status').order('admission_number');$('studentsBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.admission_number)+'</td><td>'+esc(x.profile_id)+'</td><td>'+esc(x.current_class_id||'—')+'</td><td>'+esc(x.status)+'</td></tr>').join('')||'<tr><td>No students</td></tr>'}async function loadTeachers(){const r=await sb.from('teachers').select('profile_id,staff_number,department,is_active');$('teachersBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.profile_id)+'</td><td>'+esc(x.staff_number)+'</td><td>'+esc(x.department)+'</td><td>'+esc(x.is_active)+'</td></tr>').join('')||'<tr><td>No teachers</td></tr>'}async function loadParents(){const r=await sb.from('parents').select('profile_id,occupation');$('parentsBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.profile_id)+'</td><td>'+esc(x.occupation)+'</td></tr>').join('')||'<tr><td>No parents</td></tr>'}async function loadParentRequests(){const r=await sb.from('parent_registration_requests').select('id,student_admission_number,student_full_name,relationship,status').eq('status','pending').order('created_at',{ascending:false});if(r.error){$('parentRequestsBody').textContent=r.error.message;return}$('parentRequestsBody').innerHTML=(r.data||[]).map(x=>'<div class="card" style="margin:8px 0"><b>'+esc(x.student_full_name||'Student')+'</b> — '+esc(x.student_admission_number||'')+'<br>'+esc(x.relationship||'')+'<br><button type="button" onclick="approveParent(\''+x.id+'\')">✓ Approve</button> <button type="button" class="secondary" onclick="rejectParent(\''+x.id+'\')">Reject</button></div>').join('')||'<p>No pending parent registrations.</p>'} async function approveParent(id){const r=await sb.rpc('approve_parent_registration',{request_id:id});if(r.error){$('parentRequestsMsg').textContent=r.error.message;return}$('parentRequestsMsg').textContent='Parent approved.';loadParentRequests();loadParents();loadDashboard()} async function rejectParent(id){const r=await sb.from('parent_registration_requests').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id);if(r.error){$('parentRequestsMsg').textContent=r.error.message;return}$('parentRequestsMsg').textContent='Parent request rejected.';loadParentRequests();loadDashboard()} async function loadClasses(){const r=await sb.from('classes').select('id,level,name,grade_number').order('sort_order');$('classesBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.level)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.grade_number)+'</td><td><button type="button" onclick="deleteClass(\''+x.id+'\')">Delete</button></td></tr>').join('')||'<tr><td>No classes</td></tr>'}
 async function deleteClass(id){if(!confirm('Delete this class?'))return;const r=await sb.from('classes').delete().eq('id',id);if(r.error){alert(r.error.message);return}loadClasses();loadDashboard()}
 async function loadAcademics(){const r=await sb.from('subjects').select('id,code,name,is_ai_subject').order('sort_order');$('subjectsBody').innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.code)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.is_ai_subject)+'</td><td><button type="button" onclick="deleteSubject(\''+x.id+'\')">Delete</button></td></tr>').join('')||'<tr><td>No subjects</td></tr>'}
@@ -175,50 +180,4 @@ async function createSubjectVoice(p){const r=await sb.from('subjects').insert({c
 async function createNewsVoice(p){const r=await sb.from('news').insert({title:p.title,slug:p.slug||String(p.title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),body:p.body||'',status:'draft'});if(r.error)throw r.error;loadContent();speak('The news draft was saved.')}
 function start(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){q('voiceStatus').textContent='Voice input is not supported in this browser. Use Chrome on a secure connection.';return}if(rec)return;rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=false;rec.onstart=()=>{q('voiceStatus').textContent='Listening…';q('voiceText').textContent='';};rec.onresult=e=>{let final='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript;}if(final){q('voiceText').textContent=final;route(final).catch(x=>{q('voiceStatus').textContent=x.message;speak('Sorry, I could not complete that request.');});}};rec.onerror=e=>q('voiceStatus').textContent='Voice error: '+e.error;rec.onend=()=>{rec=null;if(q('voiceStatus').textContent==='Listening…')q('voiceStatus').textContent='Ready.'};rec.start()}
 q('voiceStart').onclick=start;q('voiceStop').onclick=()=>{rec?.stop();rec=null};q('voiceCancelBtn').onclick=()=>{pending=null;q('voiceConfirm').style.display='none';speak('Cancelled.')};q('voiceConfirmBtn').onclick=async()=>{if(!pending)return;const c=pending;pending=null;q('voiceConfirm').style.display='none';try{await execute(c)}catch(e){q('voiceStatus').textContent=e.message;speak('I could not complete the action.')}};})();
-</script><script>
-(function(){
-  function by(id){return document.getElementById(id)}
-  function timeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('Request timed out. Please check your internet connection.'))},ms)})])}
-  function message(id,text){var el=by(id);if(el)el.textContent=text}
-  var authClient=window._mountMasabaAuthClient||(window._mountMasabaAuthClient=window.supabase.createClient('https://bpxfyvxqciktrahaxkws.supabase.co','sb_publishable_mW5V6o9vpzI9Z8sPcip01A_N6zNZWiL'));
-  by('registerBtn').onclick=function(){
-    by('loginPanel').style.display='none';by('registerPanel').style.display='block';message('regMsg','');
-  };
-  by('backBtn').onclick=function(){
-    by('registerPanel').style.display='none';by('loginPanel').style.display='block';message('msg','');
-  };
-  by('login').onsubmit=async function(e){
-    e.preventDefault();var b=e.submitter||by('login').querySelector('button');b.disabled=true;message('msg','Signing in…');
-    try{
-      var r=await timeout(authClient.auth.signInWithPassword({email:by('email').value.trim(),password:by('password').value}),15000);
-      if(r.error)throw r.error;
-      var s=await timeout(authClient.auth.getSession(),15000),session=s.data&&s.data.session;
-      if(!session)throw new Error('Login did not create a session.');
-      var p=await timeout(authClient.from('profiles').select('role,is_active').eq('id',session.user.id).maybeSingle(),15000);
-      if(p.error)throw p.error;
-      if(p.data&&p.data.role==='admin'&&p.data.is_active!==false){
-        by('gate').style.display='none';by('app').style.display='flex';if(typeof loadDashboard==='function')loadDashboard();
-      }else{
-        await authClient.auth.signOut();throw new Error('Login succeeded, but this account is not an active administrator.');
-      }
-    }catch(err){message('msg',err.message||'Login failed.');}
-    finally{b.disabled=false;}
-  };
-  by('registerForm').onsubmit=async function(e){
-    e.preventDefault();var b=by('regSubmit');b.disabled=true;message('regMsg','Creating account…');
-    try{
-      var name=by('regName').value.trim(),email=by('regEmail').value.trim(),password=by('regPassword').value;
-      if(!name)throw new Error('Enter your full name.');
-      if(password.length<8)throw new Error('Password must be at least 8 characters.');
-      var r=await timeout(authClient.auth.signUp({email:email,password:password,options:{data:{full_name:name}}}),15000);
-      if(r.error)throw r.error;
-      if(r.data&&r.data.session){
-        var boot=await timeout(authClient.rpc('bootstrap_first_admin'),15000);if(boot.error)throw boot.error;
-        message('regMsg','Administrator created. Opening console…');
-        by('gate').style.display='none';by('app').style.display='flex';if(typeof loadDashboard==='function')loadDashboard();
-      }else message('regMsg','Account created. Check your email to confirm it, then sign in.');
-    }catch(err){message('regMsg',err.message||'Registration failed.');}
-    finally{b.disabled=false;}
-  };
-})();
 </script></body></html>
